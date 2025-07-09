@@ -1,0 +1,20 @@
+[project]
+name = "room_booking"
+authors = [
+    { name = "alaalsalam", email = "alaalsalam101@gmail.com"}
+]
+description = "**room_booking** is a custom Frappe app designed to manage and schedule rooms, halls, or any reservable spaces by the hour or day. It features an interactive calendar, conflict prevention, and advanced user permissions."
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    # "frappe~=15.0.0" # Installed and managed by bench.
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+# These dependencies are only installed when developer mode is enabled
+[tool.bench.dev-dependencies]
+# package_name = "~=1.1.0"
