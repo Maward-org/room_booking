@@ -1,0 +1,80 @@
+/* هيكل الصفحة العامة */
+.room-booking-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* بطاقات الغرف */
+.room-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    margin-bottom: 20px;
+    background: #fff;
+}
+.room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* عناوين الغرف */
+.room-header {
+    padding: 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* الساعات المتاحة */
+.time-slots {
+    padding: 15px;
+}
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+.time-slot {
+    padding: 8px;
+    text-align: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.time-slot.available {
+    background: #e8f5e9;
+    border: 1px solid #a5d6a7;
+}
+.time-slot.selected {
+    background: #bbdefb;
+    border: 1px solid #64b5f6;
+}
+.time-slot.booked {
+    background: #ffebee;
+    border: 1px solid #ef9a9a;
+    cursor: not-allowed;
+}
+
+/* نافذة الحجز */
+.booking-modal .modal-header {
+    background: #007bff;
+    color: white;
+}
+.booking-summary {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+/* تجاوبية */
+@media (max-width: 768px) {
+    .slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}

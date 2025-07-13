@@ -28,6 +28,16 @@ app_license = "mit"
 # app_include_css = "/assets/room_booking/css/room_booking.css"
 # app_include_js = "/assets/room_booking/js/room_booking.js"
 
+
+page_routes = [
+    {"from_route": "/bookingroom", "to_route": "bookingroom"}
+]
+
+# doc_events = {
+#     "Rental Room": {
+#         "on_update": "room_booking.api.update_room_availability"
+#     }
+# }
 # include js, css files in header of web template
 # web_include_css = "/assets/room_booking/css/room_booking.css"
 # web_include_js = "/assets/room_booking/js/room_booking.js"
@@ -42,6 +52,9 @@ app_license = "mit"
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
+page_routes = [
+    {"from_route": "/bookingroom", "to_route": "bookingroom"}
+]
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}

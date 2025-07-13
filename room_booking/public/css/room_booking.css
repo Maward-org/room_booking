@@ -1,0 +1,519 @@
+/* هيكل الصفحة العامة - تصميم عصري */
+.room-booking-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f8fafc;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* فلتر البحث - تصميم حديث */
+.filter-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.3s;
+    background: #f8fafc;
+}
+
+.form-control:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    outline: none;
+}
+
+/* بطاقات الغرف - تصميم جذاب */
+.room-card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 2rem;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.room-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* عناوين الغرف - تصميم أنيق */
+.room-header {
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+}
+
+.room-header h5 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.room-header .badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success {
+    background: #48bb78;
+}
+
+.badge-danger {
+    background: #f56565;
+}
+
+/* محتوى البطاقة - تصميم نظيف */
+.room-features {
+    padding: 1.5rem;
+}
+
+.room-features p {
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4a5568;
+}
+
+.room-features i {
+    width: 24px;
+    text-align: center;
+    color: #4299e1;
+}
+
+/* الساعات المتاحة - تصميم تفاعلي */
+.time-slots {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.time-slots h6 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #2d3748;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+.time-slot {
+    padding: 0.75rem;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.time-slot .slot-time {
+    font-weight: 600;
+}
+
+.time-slot .slot-price {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.time-slot.available {
+    background: #ebf8ff;
+    border: 1px solid #bee3f8;
+    color: #2b6cb0;
+}
+
+.time-slot.available:hover {
+    background: #bee3f8;
+    transform: scale(1.03);
+}
+
+.time-slot.selected {
+    background: #ebf4ff;
+    border: 1px solid #a3bffa;
+    color: #434190;
+    box-shadow: 0 0 0 2px #a3bffa;
+}
+
+.time-slot.booked {
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    color: #c53030;
+    cursor: not-allowed;
+    position: relative;
+    opacity: 0.7;
+}
+
+/* نافذة الحجز - تصميم احترافي */
+.booking-modal .modal-content {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.booking-modal .modal-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.booking-modal .modal-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.booking-modal .close {
+    color: white;
+    opacity: 0.8;
+    text-shadow: none;
+    transition: opacity 0.2s;
+}
+
+.booking-modal .close:hover {
+    opacity: 1;
+}
+
+.booking-modal .modal-body {
+    padding: 2rem;
+}
+
+.booking-summary {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    height: 100%;
+}
+
+.booking-info {
+    margin-top: 1rem;
+}
+
+.booking-info p {
+    margin-bottom: 1rem;
+    color: #4a5568;
+}
+
+.total-price {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.total-price strong {
+    color: #4f46e5;
+    font-size: 1.25rem;
+}
+
+/* أزرار النافذة - تصميم عصري */
+.modal-footer {
+    border-top: none;
+    padding: 1.5rem;
+    background: #f8fafc;
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s;
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-cancel {
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #4a5568;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e0;
+}
+
+/* تجاوبية متقدمة */
+@media (max-width: 992px) {
+    .room-booking-container {
+        padding: 1.5rem;
+    }
+    
+    .filter-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+    
+    .booking-modal .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .btn-confirm, .btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .room-booking-container {
+        padding: 1rem;
+    }
+    
+    .room-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    .slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+    }
+    
+    .time-slot {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* تأثيرات خاصة */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.room-card {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* طبقات الـ z-index المعدلة */
+.booking-modal {
+    z-index: 1060 !important;
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1040;
+}
+
+.booking-modal {
+    z-index: 1050;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.booking-modal.show {
+    display: block;
+}
+
+.modal-open {
+    overflow: hidden;
+    padding-right: 17px !important;
+}
+.modal-open {
+    overflow: hidden;
+    padding-right: 17px; /* لمنع اهتزاز المحتوى عند ظهور scrollbar */
+}
+
+.booking-modal {
+    z-index: 1050;
+    display: none;
+}
+
+.booking-modal.show {
+    display: block;
+    opacity: 1;
+}
+
+
+/* تحسينات إضافية للواجهة */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.25rem;
+    color: #4299e1;
+}
+
+.try-again {
+    margin-top: 1rem;
+    background: #4299e1;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.try-again:hover {
+    background: #3182ce;
+    transform: translateY(-2px);
+}
+
+.custom-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.booking-modal-container {
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-content {
+    padding: 25px;
+}
+
+.booking-header h3 {
+    color: #2e86de;
+    margin-bottom: 15px;
+}
+
+.divider {
+    height: 2px;
+    background: #f1f2f6;
+    margin: 15px 0;
+}
+
+.time-slot {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 5px;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+
+.time-slot.available {
+    background-color: #e6f7e6;
+    border-color: #a3d8a3;
+    color: #2e7d32;
+}
+
+.time-slot.booked {
+    background-color: #ffebee;
+    border-color: #ef9a9a;
+    color: #c62828;
+    cursor: not-allowed;
+}
+
+.time-slot.expired {
+    background-color: #f5f5f5;
+    border-color: #e0e0e0;
+    color: #9e9e9e;
+    cursor: not-allowed;
+}
+
+.slot-time {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.slot-status {
+    font-size: 0.9em;
+    margin-top: 3px;
+}
