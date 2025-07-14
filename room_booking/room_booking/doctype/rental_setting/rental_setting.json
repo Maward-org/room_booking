@@ -5,7 +5,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "default_customer"
+  "default_customer",
+  "column_break_qktp",
+  "item_rental"
  ],
  "fields": [
   {
@@ -13,12 +15,22 @@
    "fieldtype": "Link",
    "label": "Default Customer",
    "options": "Customer"
+  },
+  {
+   "fieldname": "column_break_qktp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item_rental",
+   "fieldtype": "Link",
+   "label": "item Rental",
+   "options": "Item"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-12 17:13:52.505229",
+ "modified": "2025-07-13 22:12:19.471349",
  "modified_by": "Administrator",
  "module": "Room Booking",
  "name": "Rental Setting",
