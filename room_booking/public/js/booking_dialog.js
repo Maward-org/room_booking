@@ -9,6 +9,7 @@ room_booking.RoomBooking.BookingDialog = class {
         this.events = events;
         this.settings = settings;
         this.dialog = null;
+        this.currentBooking = null;
     }
 
     /**
@@ -16,13 +17,17 @@ room_booking.RoomBooking.BookingDialog = class {
      * @param {object} room - بيانات الغرفة
      * @param {object} slot - بيانات الفترة الزمنية
      * @param {function} [onSuccess] - دالة استدعاء عند نجاح الحجز
+     * @param {object} [booking] - بيانات الحجز الحالية (للتعديل)
      */
-    show(room, slot, onSuccess) {
+    show(room, slot, onSuccess, booking = null) {
+        this.currentBooking = booking;
+        const isEditMode = !!booking;
         const duration = room_booking.RoomBooking.helpers.calculateDuration(slot.start, slot.end);
         const pricePerHour = room.price_per_hour || 0;
-        
+        const defaultDate = booking ? booking.start_datetime.split(' ')[0] : frappe.datetime.get_today();
+
         this.dialog = new frappe.ui.Dialog({
-            title: __('Confirm Booking'),
+            title: isEditMode ? __('Edit Booking') : __('New Booking'),
             size: 'large',
             fields: [
                 {
@@ -39,19 +44,17 @@ room_booking.RoomBooking.BookingDialog = class {
                     fieldtype: 'Link',
                     options: 'Customer',
                     reqd: 1,
-                    get_query: () => {
-                        return {
-                            filters: { 'disabled': 0 }
-                        };
-                    }
+                    default: booking ? booking.customer_name : null,
+                    get_query: () => ({ filters: { 'disabled': 0 } })
                 },
                 {
                     label: __('Date'),
                     fieldname: 'date',
                     fieldtype: 'Date',
                     reqd: true,
-                    default: frappe.datetime.get_today(),
-                    min_date: frappe.datetime.get_today()
+                    default: defaultDate,
+                    min_date: frappe.datetime.get_today(),
+                    change: () => this.validate_booking()
                 },
                 {
                     label: __('Start Time'),
@@ -59,7 +62,11 @@ room_booking.RoomBooking.BookingDialog = class {
                     fieldtype: 'Time',
                     default: room_booking.RoomBooking.helpers.formatTimeForFrontend(slot.start),
                     reqd: 1,
-                    change: () => this.update_calculations()
+                    change: () => {
+                        this.validate_time_input('start_time');
+                        this.update_end_time();
+                        this.validate_booking();
+                    }
                 },
                 {
                     label: __('Duration (hours)'),
@@ -69,7 +76,10 @@ room_booking.RoomBooking.BookingDialog = class {
                     reqd: 1,
                     min: 0.5,
                     max: 24,
-                    change: () => this.update_end_time()
+                    change: () => {
+                        this.update_end_time();
+                        this.validate_booking();
+                    }
                 },
                 {
                     label: __('End Time'),
@@ -96,17 +106,32 @@ room_booking.RoomBooking.BookingDialog = class {
                     label: __('Notes'),
                     fieldname: 'notes',
                     fieldtype: 'Text Area',
-                    rows: 3
+                    rows: 3,
+                    default: booking ? booking.notes : ''
+                },
+                {
+                    fieldname: 'validation_section',
+                    fieldtype: 'Section Break',
+                    label: __('Validation'),
+                    collapsible: 1,
+                    collapsed: 1,
+                    depends_on: 'eval:!doc.__islocal'
+                },
+                {
+                    label: __('Availability Check'),
+                    fieldname: 'availability_status',
+                    fieldtype: 'HTML',
+                    read_only: true
                 }
             ],
-            primary_action_label: __('Confirm Booking'),
-            primary_action: (values) => this.submit_booking(room, values, onSuccess),
-            secondary_action_label: __('Cancel'),
-            secondary_action: () => this.dialog.hide()
+            primary_action_label: isEditMode ? __('Update Booking') : __('Confirm Booking'),
+            primary_action: (values) => this.submit_booking(room, values, onSuccess, isEditMode),
+            secondary_action_label: __('Cancel')
         });
 
         this.setup_event_listeners();
-        this.update_end_time(); // حساب الوقت النهائي الأولي
+        this.update_end_time();
+        this.validate_booking();
         this.dialog.show();
     }
 
@@ -135,13 +160,8 @@ room_booking.RoomBooking.BookingDialog = class {
         
         if (!this.validate_time_input('start_time')) return;
         
-        const [hours, minutes] = startTime.split(':').map(Number);
-        const totalMinutes = hours * 60 + minutes + Math.round(duration * 60);
-        const endHours = Math.floor(totalMinutes / 60) % 24;
-        const endMinutes = totalMinutes % 60;
-        
-        const formattedEndTime = room_booking.RoomBooking.helpers.formatTime(endHours, endMinutes);
-        this.dialog.set_value('end_time', formattedEndTime);
+        const endTime = room_booking.RoomBooking.helpers.calculateEndTime(startTime, duration);
+        this.dialog.set_value('end_time', endTime);
         this.update_calculations();
     }
 
@@ -153,13 +173,45 @@ room_booking.RoomBooking.BookingDialog = class {
         this.dialog.set_value('amount', totalPrice);
     }
 
-    /**
-     * إرسال بيانات الحجز
-     * @param {object} room - بيانات الغرفة
-     * @param {object} values - قيم النموذج
-     * @param {function} [onSuccess] - دالة استدعاء عند النجاح
-     */
-    async submit_booking(room, values, onSuccess) {
+    async validate_booking() {
+        const values = this.dialog.get_values();
+        if (!values || !values.date || !values.start_time || !values.end_time) return;
+
+        try {
+            const isAvailable = await frappe.call({
+                method: 'room_booking.api.check_slot_availability',
+                args: {
+                    room: this.currentBooking?.rental_room || '',
+                    date: values.date,
+                    start_time: room_booking.RoomBooking.helpers.formatTimeForBackend(values.start_time),
+                    end_time: room_booking.RoomBooking.helpers.formatTimeForBackend(values.end_time),
+                    exclude_booking: this.currentBooking?.name
+                }
+            });
+
+            const statusField = this.dialog.fields_dict.availability_status;
+            if (isAvailable.message) {
+                statusField.$wrapper.html(`
+                    <div class="alert alert-success">
+                        <i class="fa fa-check-circle"></i>
+                        ${__('This time slot is available for booking')}
+                    </div>
+                `);
+            } else {
+                statusField.$wrapper.html(`
+                    <div class="alert alert-danger">
+                        <i class="fa fa-exclamation-circle"></i>
+                        ${__('This time slot is not available')}
+                    </div>
+                `);
+            }
+        } catch (error) {
+            console.error('Validation error:', error);
+        }
+    }
+
+    async submit_booking(room, values, onSuccess, isEditMode = false) {
+        // التحقق من صحة المدخلات
         if (!this.validate_time_input('start_time')) {
             frappe.msgprint(__('Please enter a valid start time in HH:mm format'));
             return;
@@ -180,28 +232,37 @@ room_booking.RoomBooking.BookingDialog = class {
                 amount: values.amount
             };
 
-            await frappe.call({
-                method: 'room_booking.api.create_booking',
-                args: { bookings: [bookingData] },
-                freeze: true,
-                callback: (r) => {
-                    if (!r.exc) {
-                        frappe.show_alert({
-                            message: __('Booking created successfully'),
-                            indicator: 'green'
-                        });
-                        this.dialog.hide();
-                        if (onSuccess) onSuccess();
-                    }
-                }
+            if (isEditMode && this.currentBooking) {
+                bookingData.name = this.currentBooking.name;
+                await frappe.call({
+                    method: 'room_booking.api.update_booking',
+                    args: { booking: bookingData },
+                    freeze: true
+                });
+            } else {
+                await frappe.call({
+                    method: 'room_booking.api.create_booking',
+                    args: { bookings: [bookingData] },
+                    freeze: true
+                });
+            }
+
+            frappe.show_alert({
+                message: isEditMode ? __('Booking updated successfully') : __('Booking created successfully'),
+                indicator: 'green'
             });
+            
+            this.dialog.hide();
+            if (onSuccess) onSuccess();
+
         } catch (error) {
             console.error('Booking error:', error);
             frappe.msgprint({
                 title: __('Booking Failed'),
-                message: __('An error occurred while creating the booking. Please try again.'),
+                message: __('An error occurred while processing your booking. Please try again.'),
                 indicator: 'red'
             });
         }
     }
 };
+

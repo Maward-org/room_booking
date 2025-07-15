@@ -1,9 +1,5 @@
 frappe.provide("room_booking.RoomBooking");
 
-/**
- * مكون اختيار الغرفة والفترات الزمنية
- * @class room_booking.RoomBooking.RoomSelector
- */
 room_booking.RoomBooking.RoomSelector = class {
     constructor({ wrapper, events = {}, settings = {} }) {
         this.wrapper = $(wrapper);
@@ -13,7 +9,7 @@ room_booking.RoomBooking.RoomSelector = class {
             branches: [], 
             slotsData: {}, 
             isLoading: false,
-            selectedSlots: []
+            currentDialog: null
         };
         this.init_component();
     }
@@ -30,19 +26,19 @@ room_booking.RoomBooking.RoomSelector = class {
             <div class="room-booking-container">
                 <div class="row filter-section">
                     <div class="col-md-4">
-                        <label>${__('Branch')}</label>
+                        <label><i class="fa fa-building"></i> ${__('الفرع')}</label>
                         <select class="form-control branch-filter"></select>
                     </div>
                     <div class="col-md-4">
-                        <label>${__('Date')}</label>
+                        <label><i class="fa fa-calendar-day"></i> ${__('التاريخ')}</label>
                         <input type="date" class="form-control date-filter" 
                                value="${frappe.datetime.get_today()}" 
                                min="${frappe.datetime.get_today()}">
                     </div>
                     <div class="col-md-4">
-                        <label>${__('Capacity')}</label>
+                        <label><i class="fa fa-users"></i> ${__('السعة')}</label>
                         <select class="form-control capacity-filter">
-                            <option value="">${__('Any')}</option>
+                            <option value="">${__('الكل')}</option>
                             <option value="5">5+</option>
                             <option value="10">10+</option>
                             <option value="20">20+</option>
@@ -52,13 +48,13 @@ room_booking.RoomBooking.RoomSelector = class {
 
                 <div class="loading-state text-center" style="display:none;">
                     <div class="spinner-border"></div>
-                    <p>${__('Loading rooms...')}</p>
+                    <p>${__('جاري تحميل الغرف...')}</p>
                 </div>
 
                 <div class="selection-summary alert alert-info mt-3" style="display:none;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <strong>${__('Selected')}:</strong> 
+                            <strong><i class="fa fa-check-circle"></i> ${__('Selected')}:</strong> 
                             <span class="selected-period"></span> | 
                             <span class="selected-duration"></span> | 
                             <span class="selected-price"></span>
@@ -70,20 +66,6 @@ room_booking.RoomBooking.RoomSelector = class {
                 </div>
 
                 <div class="room-list-container row mt-4"></div>
-
-                <div class="help-section mt-4">
-                    <div class="card">
-                        <div class="card-header"><h5>${__('How to Book')}</h5></div>
-                        <div class="card-body">
-                            <ol>
-                                <li>${__('Select branch, date and capacity')}</li>
-                                <li>${__('Click on available time slots')}</li>
-                                <li>${__('Review your selection in the summary')}</li>
-                                <li>${__('Click "Book Now" to confirm')}</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
             </div>
         `);
     }
@@ -93,7 +75,8 @@ room_booking.RoomBooking.RoomSelector = class {
         const styles = `
             <style id="room-booking-style">
                 .room-booking-container {
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-family: 'Tajawal', 'Segoe UI', sans-serif;
+                    direction: rtl;
                 }
                 
                 .slots-grid {
@@ -113,16 +96,6 @@ room_booking.RoomBooking.RoomSelector = class {
                     transition: all 0.3s ease;
                     position: relative;
                     overflow: hidden;
-                }
-                
-                .time-slot::after {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    height: 3px;
-                    background: rgba(0,0,0,0.1);
                 }
                 
                 .time-slot.available {
@@ -153,32 +126,14 @@ room_booking.RoomBooking.RoomSelector = class {
                     background-color: #bbdefb;
                 }
                 
-                .time-slot .duration-badge {
-                    display: inline-block;
-                    background: rgba(0,0,0,0.1);
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    font-size: 11px;
-                    margin-top: 5px;
+                .time-slot .slot-icon {
+                    margin-left: 5px;
                 }
                 
                 .selection-summary {
                     animation: fadeIn 0.3s ease;
                     background-color: #e3f2fd;
                     border-color: #bbdefb;
-                }
-                
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                .badge-available {
-                    background-color: #4caf50;
-                }
-                
-                .badge-booked {
-                    background-color: #2196f3;
                 }
             </style>
         `;
@@ -187,7 +142,7 @@ room_booking.RoomBooking.RoomSelector = class {
 
     bind_events() {
         this.wrapper.on('change', '.branch-filter, .date-filter, .capacity-filter', () => this.load_rooms());
-        this.wrapper.on('click', '.time-slot.available', (e) => this.handle_available_slot_click(e));
+        this.wrapper.on('click', '.time-slot.available', (e) => this.handle_slot_click(e));
         this.wrapper.on('click', '.time-slot.booked', (e) => this.handle_booked_slot_click(e));
         this.wrapper.on('click', '.btn-book', () => this.handle_book_click());
     }
@@ -196,12 +151,11 @@ room_booking.RoomBooking.RoomSelector = class {
         try {
             const { message: branches = [] } = await frappe.call('room_booking.api.get_branches');
             const $select = this.wrapper.find('.branch-filter').empty();
-            $select.append(`<option value="">${__('All Branches')}</option>`);
+            $select.append(`<option value="">${__('كل الفروع')}</option>`);
             branches.forEach(b => $select.append(`<option value="${b}">${b}</option>`));
             this.load_rooms();
         } catch (error) {
-            console.error('Failed to load branches:', error);
-            this.show_error(__('Failed to load branches. Please try again.'));
+            this.show_error(__('فشل تحميل الفروع'));
         }
     }
 
@@ -227,8 +181,7 @@ room_booking.RoomBooking.RoomSelector = class {
             this.render_rooms(rooms);
             
         } catch (error) {
-            console.error('Failed to load rooms:', error);
-            this.show_error(__('Failed to load rooms. Please try again.'));
+            this.show_error(__('فشل تحميل الغرف'));
         } finally {
             this.set_loading(false);
         }
@@ -242,7 +195,7 @@ room_booking.RoomBooking.RoomSelector = class {
                 <div class="col-12">
                     <div class="alert alert-info">
                         <i class="fa fa-info-circle"></i>
-                        ${__('No rooms available for selected criteria. Please try different filters.')}
+                        ${__('لا توجد غرف متاحة للشروط المحددة')}
                     </div>
                 </div>
             `);
@@ -256,18 +209,20 @@ room_booking.RoomBooking.RoomSelector = class {
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">${room.room_name}</h5>
-                            <span class="badge ${room.status === 'Available' ? 'badge-available' : 'badge-booked'}">
+                            <h5 class="mb-0">
+                                <i class="fa fa-door-open"></i> ${room.room_name}
+                            </h5>
+                            <span class="badge ${room.status === 'Available' ? 'badge-success' : 'badge-info'}">
                                 ${room.status}
                             </span>
                         </div>
                         <div class="card-body">
-                            <p><i class="fa fa-users text-muted"></i> ${room.no_of_seats} ${__('seats')}</p>
-                            <p><i class="fa fa-money-bill-wave text-muted"></i> 
-                                ${room_booking.RoomBooking.helpers.formatCurrency(room.price_per_hour)}/${__('hour')}
+                            <p><i class="fa fa-users"></i> ${room.no_of_seats} ${__('مقاعد')}</p>
+                            <p><i class="fa fa-money-bill-wave"></i> 
+                                ${this.format_currency(room.price_per_hour)}/${__('ساعة')}
                             </p>
                             <hr>
-                            <h6>${__('Available Time Slots')}</h6>
+                            <h6><i class="fa fa-clock"></i> ${__('الفترات المتاحة')}</h6>
                             <div class="slots-grid" data-room="${room.name}"></div>
                         </div>
                     </div>
@@ -288,7 +243,7 @@ room_booking.RoomBooking.RoomSelector = class {
                 <div class="col-12">
                     <div class="alert alert-warning">
                         <i class="fa fa-exclamation-circle"></i>
-                        ${__('No slots available for this room')}
+                        ${__('لا توجد فترات متاحة')}
                     </div>
                 </div>
             `);
@@ -297,8 +252,9 @@ room_booking.RoomBooking.RoomSelector = class {
         
         slots.forEach(slot => {
             const isBooked = (slot.status || '').toLowerCase() === 'booked';
-            const isAvailable = !isBooked;
-            const duration = room_booking.RoomBooking.helpers.calculateDuration(slot.start_time, slot.end_time);
+            const startTime = this.format_time(slot.start_time);
+            const endTime = this.format_time(slot.end_time);
+            const duration = this.calculate_duration(slot.start_time, slot.end_time);
             
             $container.append(`
                 <div class="time-slot ${isBooked ? 'booked' : 'available'}" 
@@ -307,42 +263,50 @@ room_booking.RoomBooking.RoomSelector = class {
                      data-end="${slot.end_time}"
                      data-status="${slot.status}"
                      data-price="${slot.price}"
-                     data-booking-id="${slot.booking_id || ''}"
-                     data-duration="${duration}">
-                    <div class="time-range">
-                        ${room_booking.RoomBooking.helpers.formatTimeForFrontend(slot.start_time)} - 
-                        ${room_booking.RoomBooking.helpers.formatTimeForFrontend(slot.end_time)}
+                     data-booking-id="${slot.booking_id || ''}">
+                    <div>
+                        <i class="fa fa-${isBooked ? 'lock' : 'calendar-alt'} slot-icon"></i>
+                        ${startTime} - ${endTime}
                     </div>
-                    <div class="duration-badge">
-                        ${duration} ${__('hours')}
-                    </div>
-                    <div class="price">
-                        ${room_booking.RoomBooking.helpers.formatCurrency(slot.price)}
+                    <div class="small mt-1">
+                        ${duration} ${__('ساعة')} • ${this.format_currency(slot.price)}
                     </div>
                 </div>
             `);
         });
     }
 
-    handle_available_slot_click(e) {
+    handle_slot_click(e) {
         const $slot = $(e.currentTarget);
-        const room = $slot.data('room');
-        const slot = {
-            room,
+        $slot.toggleClass('selected');
+        
+        const slotData = {
+            room: $slot.data('room'),
             start: $slot.data('start'),
             end: $slot.data('end'),
             price: $slot.data('price'),
-            duration: $slot.data('duration'),
-            status: $slot.data('status')
+            status: $slot.data('status'),
+            booking_id: $slot.data('booking-id')
         };
         
-        // تحديد الفترة المختارة
-        this.state.selectedSlots = [slot];
+        // Update selected slots
+        if ($slot.hasClass('selected')) {
+            this.state.selectedSlots.push(slotData);
+        } else {
+            this.state.selectedSlots = this.state.selectedSlots.filter(s => 
+                !(s.room === slotData.room && s.start === slotData.start)
+            );
+        }
+        
         this.update_selection_summary();
         
-        // فتح نموذج الحجز مباشرة
-        if (this.events.slot_selected) {
-            this.events.slot_selected({ room, slot });
+        // Trigger event if only one slot is selected
+        if (this.state.selectedSlots.length === 1 && this.events.slot_selected) {
+            this.events.slot_selected({
+                room: slotData.room,
+                slot: slotData,
+                is_booked: slotData.status === 'booked'
+            });
         }
     }
 
@@ -362,8 +326,201 @@ room_booking.RoomBooking.RoomSelector = class {
     }
 
     handle_book_click() {
-        if (this.state.selectedSlots.length && this.events.book_now_clicked) {
-            this.events.book_now_clicked(this.state.selectedSlots);
+        if (!this.state.selectedSlots.length) return;
+        
+        const slotData = this.state.selectedSlots[0];
+        this.show_booking_dialog(slotData);
+    }
+
+    show_booking_dialog(slotData) {
+        if (this.state.currentDialog) {
+            this.state.currentDialog.hide();
+        }
+
+        const formatTimeForDisplay = (timeStr) => {
+            if (!timeStr) return '00:00';
+            const parts = timeStr.split(':');
+            return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : '00:00';
+        };
+
+        const dialog = new frappe.ui.Dialog({
+            title: __('حجز غرفة'),
+            fields: [
+                {
+                    label: __('اسم العميل'),
+                    fieldname: 'customer',
+                    fieldtype: 'Link',
+                    options: 'Customer',
+                    reqd: 1
+                },
+                {
+                    label: __('تاريخ الحجز'),
+                    fieldname: 'booking_date',
+                    fieldtype: 'Date',
+                    default: this.wrapper.find('.date-filter').val(),
+                    read_only: 1
+                },
+                {
+                    label: __('وقت الدخول'),
+                    fieldname: 'start_time',
+                    fieldtype: 'Data', // Changed from 'Time' to 'Data'
+                    default: formatTimeForDisplay(slotData.start),
+                    reqd: 1,
+                    description: __('التنسيق: HH:mm (مثال: 14:30)')
+                },
+                {
+                    label: __('عدد الساعات'),
+                    fieldname: 'hours',
+                    fieldtype: 'Float',
+                    default: this.calculate_duration(slotData.start, slotData.end),
+                    reqd: 1
+                },
+                {
+                    label: __('وقت الخروج'),
+                    fieldname: 'end_time',
+                    fieldtype: 'Data', // Changed from 'Time' to 'Data'
+                    default: formatTimeForDisplay(slotData.end),
+                    read_only: 1
+                },
+                {
+                    label: __('السعر'),
+                    fieldname: 'amount',
+                    fieldtype: 'Currency',
+                    default: slotData.price,
+                    read_only: 1
+                },
+                {
+                    label: __('ملاحظات'),
+                    fieldname: 'notes',
+                    fieldtype: 'Text'
+                }
+            ],
+            primary_action_label: __('حجز'),
+            primary_action: (values) => {
+                if (!this.validateTimeFormat(values.start_time)) {
+                    frappe.msgprint(__('صيغة وقت الدخول غير صحيحة. يجب أن تكون HH:mm'));
+                    return;
+                }
+
+                // Format time for backend
+                values.start_time = this.format_time_for_backend(values.start_time);
+                values.end_time = this.format_time_for_backend(values.end_time);
+                
+                this.submit_booking(values, slotData);
+            }
+        });
+
+        // Add time validation on change
+        dialog.fields_dict.start_time.$input.on('change', () => {
+            const timeValue = dialog.get_value('start_time');
+            if (!this.validateTimeFormat(timeValue)) {
+                frappe.msgprint(__('صيغة الوقت غير صحيحة. يجب أن تكون HH:mm (مثال: 14:30)'));
+                dialog.set_value('start_time', '00:00');
+                return;
+            }
+            this.update_booking_times(dialog, slotData, 'start');
+        });
+
+        dialog.fields_dict.hours.$input.on('change', () => {
+            const hours = parseFloat(dialog.get_value('hours'));
+            if (hours < 1 || hours > 24) {
+                frappe.msgprint(__('عدد الساعات يجب أن يكون بين 1 و 24'));
+                dialog.set_value('hours', 1);
+                return;
+            }
+            this.update_booking_times(dialog, slotData, 'hours');
+        });
+
+        dialog.show();
+        this.state.currentDialog = dialog;
+    }
+
+    validateTimeFormat(timeStr) {
+        if (!timeStr) return false;
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        return timeRegex.test(timeStr);
+    }
+
+    format_time_for_backend(timeStr) {
+        if (!timeStr) return '00:00:00';
+        const parts = timeStr.split(':');
+        if (parts.length === 2) {
+            return `${parts[0]}:${parts[1]}:00`;
+        }
+        return timeStr;
+    }
+
+    update_booking_times(dialog, slotData, changedField) {
+        const startTime = dialog.get_value('start_time');
+        if (!this.validateTimeFormat(startTime)) {
+            return;
+        }
+
+        let hours = parseFloat(dialog.get_value('hours'));
+        hours = Math.max(1, Math.min(hours, 24));
+        
+        const endTime = this.calculate_end_time(startTime, hours);
+        dialog.set_value('end_time', endTime);
+        
+        // Update price
+        const pricePerHour = slotData.price / this.calculate_duration(slotData.start, slotData.end);
+        const price = (hours * pricePerHour).toFixed(2);
+        dialog.set_value('amount', price);
+    }
+
+    calculate_end_time(startTime, hours) {
+        const [hoursPart, minutesPart] = startTime.split(':').map(Number);
+        const totalMinutes = hoursPart * 60 + minutesPart + Math.round(hours * 60);
+        
+        const endHours = Math.floor(totalMinutes / 60) % 24;
+        const endMinutes = totalMinutes % 60;
+        
+        return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+    }
+
+    async submit_booking(values, slotData) {
+        try {
+            this.set_loading(true);
+            
+            const bookingData = {
+                rental_room: slotData.room,
+                start_datetime: `${values.booking_date} ${values.start_time}`,
+                end_datetime: `${values.booking_date} ${values.end_time}`,
+                customer_name: values.customer,
+                notes: values.notes,
+                amount: values.amount
+            };
+
+            await frappe.call({
+                method: 'room_booking.api.create_booking',
+                args: { booking: bookingData },
+                freeze: true
+            });
+
+            frappe.show_alert({
+                message: __('تم الحجز بنجاح'),
+                indicator: 'green'
+            });
+
+            if (this.state.currentDialog) {
+                this.state.currentDialog.hide();
+            }
+
+            this.reload_rooms();
+            
+            if (this.events.booking_created) {
+                this.events.booking_created(bookingData);
+            }
+
+        } catch (error) {
+            console.error('خطأ في الحجز:', error);
+            frappe.msgprint({
+                title: __('خطأ في الحجز'),
+                message: __('حدث خطأ أثناء محاولة الحجز: ') + error.message,
+                indicator: 'red'
+            });
+        } finally {
+            this.set_loading(false);
         }
     }
 
@@ -375,17 +532,15 @@ room_booking.RoomBooking.RoomSelector = class {
             return;
         }
         
-        const slot = this.state.selectedSlots[0];
-        const duration = slot.duration;
-        const price = slot.price;
+        const firstSlot = this.state.selectedSlots[0];
         
         this.wrapper.find('.selected-period').text(
-            `${room_booking.RoomBooking.helpers.formatTimeForFrontend(slot.start)} - 
-             ${room_booking.RoomBooking.helpers.formatTimeForFrontend(slot.end)}`
+            `${this.format_time(firstSlot.start)} - ${this.format_time(firstSlot.end)}`
         );
         
-        this.wrapper.find('.selected-duration').text(`${duration} ${__('hours')}`);
-        this.wrapper.find('.selected-price').text(room_booking.RoomBooking.helpers.formatCurrency(price));
+        const duration = this.calculate_duration(firstSlot.start, firstSlot.end);
+        this.wrapper.find('.selected-duration').text(`${duration} ${__('ساعة')}`);
+        this.wrapper.find('.selected-price').text(this.format_currency(firstSlot.price));
         
         $summary.show();
     }
@@ -399,7 +554,7 @@ room_booking.RoomBooking.RoomSelector = class {
     set_loading(loading) {
         this.state.isLoading = loading;
         this.wrapper.find('.loading-state').toggle(loading);
-        this.wrapper.find('.filter-section, .room-list-container, .help-section').toggle(!loading);
+        this.wrapper.find('.filter-section, .room-list-container').toggle(!loading);
     }
 
     reload_rooms() {
@@ -408,9 +563,25 @@ room_booking.RoomBooking.RoomSelector = class {
 
     show_error(message) {
         frappe.msgprint({
-            title: __('Error'),
+            title: __('خطأ'),
             message: message,
             indicator: 'red'
         });
+    }
+
+    // Helper methods
+    format_time(timeStr) {
+        if (!timeStr) return '00:00';
+        return timeStr.split(':').slice(0, 2).join(':');
+    }
+
+    calculate_duration(start, end) {
+        const startTime = new Date(`2000-01-01T${start}:00`);
+        const endTime = new Date(`2000-01-01T${end}:00`);
+        return ((endTime - startTime) / (1000 * 60 * 60)).toFixed(1);
+    }
+
+    format_currency(amount) {
+        return parseFloat(amount || 0).toFixed(2) + ' ' + __('ر.س');
     }
 };

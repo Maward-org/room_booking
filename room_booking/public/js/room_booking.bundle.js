@@ -2,7 +2,7 @@ import "./room_selector.js";
 import "./room_explorer.js";
 // import "./payment_processor.js";
 // import "./theme_manager.js";
-// import "./booking_manager.js";
+import "./booking_manager.js";
 // import "./3d_room_viewer.js";
 // import "./booking_analytics.js";
 // import "./booking_pos.js";

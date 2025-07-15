@@ -615,77 +615,78 @@ class RoomBookingApp {
         dialog.set_value('amount', totalPrice);
     }
 
-    async submitBooking(values, dialog) {
-        if (!this.validateTimeInput(dialog, 'start_time')) return;
+async submitBooking(values, dialog) {
+    if (!this.validateTimeInput(dialog, 'start_time')) return;
 
-        if (!values.customer) {
-            frappe.msgprint({
-                title: __('Customer Required'),
-                message: __('Please select a customer'),
-                indicator: 'red'
-            });
-            return;
-        }
-
-        const date = this.$container.find('.date-filter').val();
-        const room = this.state.selectedRoom;
-
-        try {
-            const isAvailable = await frappe.call({
-                method: 'room_booking.api.check_slot_availability',
-                args: {
-                    room: room,
-                    date: date,
-                    start_time: this.formatTimeForBackend(values.start_time),
-                    end_time: this.formatTimeForBackend(values.end_time)
-                }
-            });
-
-            if (!isAvailable.message) {
-                frappe.msgprint({
-                    title: __('Slot Not Available'),
-                    message: __('The selected time slot is no longer available. Please choose another time.'),
-                    indicator: 'red'
-                });
-                return;
-            }
-        } catch (e) {
-            frappe.msgprint(__('Error checking availability'));
-            return;
-        }
-
-        const booking = {
-            rental_room: room,
-            start_datetime: `${date} ${this.formatTimeForBackend(values.start_time)}`,
-            end_datetime: `${date} ${this.formatTimeForBackend(values.end_time)}`,
-            customer_name: values.customer,
-            notes: values.notes || '',
-            amount: values.amount
-        };
-
-        try {
-            await frappe.call({
-                method: 'room_booking.api.create_booking',
-                args: { bookings: [booking] },
-                freeze: true
-            });
-
-            frappe.show_alert({
-                message: __('Booking created successfully'),
-                indicator: 'green'
-            });
-            dialog.hide();
-            this.clearSelection();
-            this.loadRooms();
-        } catch (e) {
-            frappe.msgprint({
-                title: __('Booking Failed'),
-                message: __('Booking failed. Please try again.'),
-                indicator: 'red'
-            });
-        }
+    if (!values.customer) {
+        frappe.msgprint({
+            title: __('Customer Required'),
+            message: __('Please select a customer'),
+            indicator: 'red'
+        });
+        return;
     }
 
+    const date = this.$container.find('.date-filter').val();
+    const room = this.state.selectedRoom;
+
+    try {
+        const isAvailable = await frappe.call({
+            method: 'room_booking.api.check_slot_availability',
+            args: {
+                room: room,
+                date: date,
+                start_time: this.formatTimeForBackend(values.start_time),
+                end_time: this.formatTimeForBackend(values.end_time)
+            }
+        });
+
+        if (!isAvailable.message) {
+            frappe.msgprint({
+                title: __('Slot Not Available'),
+                message: __('The selected time slot is no longer available. Please choose another time.'),
+                indicator: 'red'
+            });
+            return;
+        }
+    } catch (e) {
+        frappe.msgprint(__('Error checking availability'));
+        return;
+    }
+
+    const booking = {
+        rental_room: room,
+        start_datetime: `${date} ${this.formatTimeForBackend(values.start_time)}`,
+        end_datetime: `${date} ${this.formatTimeForBackend(values.end_time)}`,
+        customer_name: values.customer,
+        notes: values.notes || '',
+        amount: values.amount
+    };
+
+    try {
+        await frappe.call({
+            method: 'room_booking.api.create_booking',
+            args: { 
+                bookings: [booking]  // Fixed parameter name
+            },
+            freeze: true
+        });
+
+        frappe.show_alert({
+            message: __('Booking created successfully'),
+            indicator: 'green'
+        });
+        dialog.hide();
+        this.clearSelection();
+        this.loadRooms();
+    } catch (e) {
+        frappe.msgprint({
+            title: __('Booking Failed'),
+            message: __('Booking failed. Please try again.'),
+            indicator: 'red'
+        });
+    }
+}
     formatCurrency(amount) {
         return parseFloat(amount || 0).toFixed(2) + ' ' + __('SAR');
     }
