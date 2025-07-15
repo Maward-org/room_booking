@@ -321,7 +321,7 @@ erpnext.PointOfSale.Controller = class {
 	}
 
 	init_item_cart() {
-		this.cart = new erpnext.PointOfSale.ItemCart({
+		this.cart = new erpnext.RoomBookingPOS.ItemCart({
 			wrapper: this.$components_wrapper,
 			settings: this.settings,
 			events: {

@@ -1,125 +1,66 @@
-erpnext.PointOfSale.PastOrderList = class {
-	constructor({ wrapper, events }) {
-		this.wrapper = wrapper;
-		this.events = events;
+frappe.provide("room_booking.RoomBookingPOS");
 
+room_booking.RoomBookingPOS.PastOrderList = class {
+	constructor({ wrapper, filters = {} }) {
+		this.wrapper = $(wrapper);
+		this.filters = filters;
 		this.init_component();
 	}
 
-	init_component() {
+	async init_component() {
 		this.prepare_dom();
-		this.make_filter_section();
-		this.bind_events();
+		await this.load_orders();
 	}
 
 	prepare_dom() {
-		this.wrapper.append(
-			`<section class="past-order-list">
-				<div class="filter-section">
-					<div class="label">${__("Recent Orders")}</div>
-					<div class="search-field"></div>
-					<div class="status-field"></div>
-				</div>
-				<div class="invoices-container"></div>
-			</section>`
-		);
-
-		this.$component = this.wrapper.find(".past-order-list");
-		this.$invoices_container = this.$component.find(".invoices-container");
-	}
-
-	bind_events() {
-		this.search_field.$input.on("input", (e) => {
-			clearTimeout(this.last_search);
-			this.last_search = setTimeout(() => {
-				const search_term = e.target.value;
-				this.refresh_list(search_term, this.status_field.get_value());
-			}, 300);
-		});
-		const me = this;
-		this.$invoices_container.on("click", ".invoice-wrapper", function () {
-			const invoice_name = unescape($(this).attr("data-invoice-name"));
-
-			me.events.open_invoice_data(invoice_name);
-		});
-	}
-
-	make_filter_section() {
-		const me = this;
-		this.search_field = frappe.ui.form.make_control({
-			df: {
-				label: __("Search"),
-				fieldtype: "Data",
-				placeholder: __("Search by invoice id or customer name"),
-			},
-			parent: this.$component.find(".search-field"),
-			render_input: true,
-		});
-		this.status_field = frappe.ui.form.make_control({
-			df: {
-				label: __("Invoice Status"),
-				fieldtype: "Select",
-				options: `Draft\nPaid\nConsolidated\nReturn`,
-				placeholder: __("Filter by invoice status"),
-				onchange: function () {
-					if (me.$component.is(":visible")) me.refresh_list();
-				},
-			},
-			parent: this.$component.find(".status-field"),
-			render_input: true,
-		});
-		this.search_field.toggle_label(false);
-		this.status_field.toggle_label(false);
-		this.status_field.set_value("Draft");
-	}
-
-	refresh_list() {
-		frappe.dom.freeze();
-		this.events.reset_summary();
-		const search_term = this.search_field.get_value();
-		const status = this.status_field.get_value();
-
-		this.$invoices_container.html("");
-
-		return frappe.call({
-			method: "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list",
-			freeze: true,
-			args: { search_term, status },
-			callback: (response) => {
-				frappe.dom.unfreeze();
-				response.message.forEach((invoice) => {
-					const invoice_html = this.get_invoice_html(invoice);
-					this.$invoices_container.append(invoice_html);
-				});
-			},
-		});
-	}
-
-	get_invoice_html(invoice) {
-		const posting_datetime = frappe.datetime.str_to_user(
-			invoice.posting_date + " " + invoice.posting_time
-		);
-		return `<div class="invoice-wrapper" data-invoice-name="${escape(invoice.name)}">
-				<div class="invoice-name-date">
-					<div class="invoice-name">${invoice.name}</div>
-					<div class="invoice-date">
-						<svg class="mr-2" width="12" height="12" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-						</svg>
-						${frappe.ellipsis(invoice.customer, 20)}
-					</div>
-				</div>
-				<div class="invoice-total-status">
-					<div class="invoice-total">${format_currency(invoice.grand_total, invoice.currency) || 0}</div>
-					<div class="invoice-date">${posting_datetime}</div>
-				</div>
+		this.wrapper.html(`
+			<div class="rbp-past-orders p-2 border rounded bg-light">
+				<h6 class="mb-2">${__("سجل الحجوزات السابقة")}</h6>
+				<table class="table table-sm table-striped mb-0">
+					<thead>
+						<tr>
+							<th>${__("رقم الحجز")}</th>
+							<th>${__("الغرفة")}</th>
+							<th>${__("التاريخ")}</th>
+							<th>${__("الفترة")}</th>
+							<th>${__("العميل")}</th>
+							<th>${__("المبلغ")}</th>
+							<th>${__("الحالة")}</th>
+						</tr>
+					</thead>
+					<tbody class="rbp-orders-tbody"></tbody>
+				</table>
 			</div>
-			<div class="seperator"></div>`;
+		`);
+		this.$tbody = this.wrapper.find('.rbp-orders-tbody');
 	}
 
-	toggle_component(show) {
-		show
-			? this.$component.css("display", "flex") && this.refresh_list()
-			: this.$component.css("display", "none");
+	async load_orders() {
+		this.$tbody.html(`<tr><td colspan="7" class="text-center text-muted">${__("...تحميل")}</td></tr>`);
+		try {
+			const r = await frappe.call({
+				method: "frappe.client.get_list",
+				args: {
+					doctype: "Room Booking",
+					fields: ["name", "rental_room", "booking_date", "start_time", "end_time", "customer_name", "total_amount", "reservation_status"],
+					limit_page_length: 25,
+					order_by: "booking_date desc"
+				}
+			});
+			const rows = (r.message || []).map(b =>
+				`<tr>
+					<td>${b.name}</td>
+					<td>${b.rental_room}</td>
+					<td>${b.booking_date}</td>
+					<td>${b.start_time} - ${b.end_time}</td>
+					<td>${b.customer_name || ""}</td>
+					<td>${b.total_amount}</td>
+					<td>${b.reservation_status || ""}</td>
+				</tr>`
+			).join("");
+			this.$tbody.html(rows || `<tr><td colspan="7" class="text-center text-muted">${__("لا توجد حجوزات")}</td></tr>`);
+		} catch (e) {
+			this.$tbody.html(`<tr><td colspan="7" class="text-danger">${__("خطأ في تحميل الحجوزات")}</td></tr>`);
+		}
 	}
 };

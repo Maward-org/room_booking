@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+
 import frappe
 from frappe import _
+
 from datetime import datetime, time, timedelta
 import json
 from frappe.utils import get_datetime, get_time, getdate, now_datetime, cint, flt
@@ -415,3 +418,121 @@ def update_booking_status(booking_id, status):
     except Exception as e:
         frappe.log_error(f"Failed to update booking status for {booking_id}: {str(e)}")
         frappe.throw(_("Failed to update booking status"))
+        
+        
+
+
+@frappe.whitelist()
+def get_rooms_with_slots(date=None, branch=None, capacity=None):
+    """استرجاع الغرف مع الفترات المتاحة"""
+    filters = [
+        ["status", "=", "Available"]
+    ]
+    
+    if branch:
+        filters.append(["branch", "=", branch])
+    if capacity:
+        filters.append(["no_of_seats", ">=", int(capacity)])
+    
+    rooms = frappe.get_all("Rental Room",
+        filters=filters,
+        fields=["name", "room_name", "no_of_seats", "price_per_hour", "status", "image"]
+    )
+    
+    for room in rooms:
+        # room["slots"] = get_available_slots(room.name, date)
+        room["slots"] = get_room_slots_for_date(room.name, date)
+    
+    return rooms
+
+@frappe.whitelist()
+def create_booking(booking):
+    """إنشاء حجز جديد"""
+    booking = frappe._dict(booking)
+    
+    # التحقق من التوفر
+    if not check_slot_availability(booking):
+        frappe.throw(_("الفترة المحددة لم تعد متاحة"))
+    
+    # إنشاء وثيقة الحجز
+    doc = frappe.get_doc({
+        "doctype": "Room Booking",
+        "customer": booking.customer,
+        "booking_date": booking.date,
+        "room": booking.room,
+        "start_time": booking.start_time,
+        "end_time": booking.end_time,
+        "amount": booking.amount,
+        "status": "Confirmed"
+    })
+    
+    doc.insert(ignore_permissions=True)
+    doc.submit()
+    
+    return {
+        "name": doc.name,
+        "message": _("تم تأكيد الحجز بنجاح")
+    }
+
+@frappe.whitelist()
+def get_booking_analytics(period="month"):
+    """إحصائيات الحجوزات"""
+    # تنفيذ استعلامات SQL للحصول على البيانات
+    # (مثال مبسط)
+    return {
+        "total_bookings": 42,
+        "total_revenue": 12500,
+        "occupancy_rate": 68,
+        "labels": ["الأسبوع 1", "الأسبوع 2", "الأسبوع 3", "الأسبوع 4"],
+        "bookings": [10, 12, 8, 12],
+        "revenue": [3000, 3500, 2500, 3500]
+    }
+    
+
+@frappe.whitelist()
+def get_user_bookings(start_date=None, end_date=None):
+    """استرجاع حجوزات المستخدم"""
+    filters = [
+        # ["Room Booking", "customer", "=", frappe.session.user],
+        # ["Room Booking", "docstatus", "=", 1]
+    ]
+    
+    if start_date and end_date:
+        filters.extend([
+            ["Room Booking", "start_time", ">=", start_date],
+            ["Room Booking", "end_time", "<=", end_date]
+        ])
+    
+    bookings = frappe.get_all("Room Booking",
+        filters=filters,
+        fields=["name", "start_time", "end_time", 
+                "customer_name", "total_amount", "status"],
+        order_by="start_time asc"
+    )
+    
+    return bookings
+
+@frappe.whitelist()
+def cancel_booking(booking_id):
+    """إلغاء حجز"""
+    try:
+        booking = frappe.get_doc("Room Booking", booking_id)
+        
+        # التحقق من صلاحيات المستخدم
+        if booking.customer != frappe.session.user:
+            frappe.throw(_("ليس لديك صلاحية لإلغاء هذا الحجز"))
+        
+        booking.status = "Cancelled"
+        booking.save()
+        
+        return {"success": True, "message": _("تم الإلغاء بنجاح")}
+    except Exception as e:
+        frappe.log_error(f"Failed to cancel booking: {str(e)}")
+        return {"success": False, "message": str(e)}
+    
+    
+@frappe.whitelist()
+def has_booking_permission(doc, user):
+    if user == "Administrator":
+        return True
+    return doc.customer == user

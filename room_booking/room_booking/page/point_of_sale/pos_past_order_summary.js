@@ -1,4 +1,4 @@
-erpnext.PointOfSale.PastOrderSummary = class {
+room_booking.RoomBookingPOS.PastOrderSummary = class {
 	constructor({ wrapper, settings, events }) {
 		this.wrapper = wrapper;
 		this.events = events;
