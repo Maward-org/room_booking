@@ -16,248 +16,48 @@ room_booking.RoomBooking.RoomSelector = class {
 
     init_component() {
         this.render();
-        this.add_styles();
+        // this.add_styles();
         this.load_branches();
         this.bind_events();
     }
 
+
     render() {
-        this.wrapper.html(`
-            <div class="room-booking-container">
-                <div class="row filter-section">
-                    <div class="col-md-4">
-                        <label><i class="fa fa-building"></i> ${__('الفرع')}</label>
-                        <select class="form-control branch-filter"></select>
-                    </div>
-                    <div class="col-md-4">
-                        <label><i class="fa fa-calendar-day"></i> ${__('التاريخ')}</label>
-                        <input type="date" class="form-control date-filter" 
-                               value="${frappe.datetime.get_today()}" 
-                               min="${frappe.datetime.get_today()}">
-                    </div>
-                    <div class="col-md-4">
-                        <label><i class="fa fa-users"></i> ${__('السعة')}</label>
-                        <select class="form-control capacity-filter">
-                            <option value="">${__('الكل')}</option>
-                            <option value="5">5+</option>
-                            <option value="10">10+</option>
-                            <option value="20">20+</option>
-                        </select>
-                    </div>
+    this.wrapper.html(`
+        <div class="room-booking-container">
+            <div class="filter-section grid-filters">
+                <div class="filter-item">
+                    <label><i class="fa fa-building"></i> ${__('الفرع')}</label>
+                    <select class="form-control branch-filter"></select>
                 </div>
-
-                <div class="loading-state text-center" style="display:none;">
-                    <div class="spinner-border"></div>
-                    <p>${__('جاري تحميل الغرف...')}</p>
+                <div class="filter-item">
+                    <label><i class="fa fa-calendar-day"></i> ${__('التاريخ')}</label>
+                    <input type="date" class="form-control date-filter" 
+                           value="${frappe.datetime.get_today()}" 
+                           min="${frappe.datetime.get_today()}">
                 </div>
-
-                <div class="room-list-container row mt-4"></div>
+                <div class="filter-item">
+                    <label><i class="fa fa-users"></i> ${__('السعة')}</label>
+                    <select class="form-control capacity-filter">
+                        <option value="">${__('الكل')}</option>
+                        <option value="5">5+</option>
+                        <option value="10">10+</option>
+                        <option value="20">20+</option>
+                    </select>
+                </div>
             </div>
-        `);
-    }
 
-    add_styles() {
-        if ($("#room-booking-style").length) return;
-        const styles = `
-            <style id="room-booking-style">
-                .room-booking-container {
-                    font-family: 'Tajawal', 'Segoe UI', sans-serif;
-                    direction: rtl;
-                    background-color: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-                }
-                
-                .filter-section {
-                    background-color: #fff;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-                    margin-bottom: 20px;
-                }
-                
-                .filter-section label {
-                    font-weight: 600;
-                    color: #495057;
-                    margin-bottom: 8px;
-                    display: block;
-                }
-                
-                .filter-section .form-control {
-                    border-radius: 6px;
-                    border: 1px solid #e0e0e0;
-                    padding: 10px 15px;
-                    height: auto;
-                }
-                
-                .room-list-container {
-                    margin: 0 -10px;
-                }
-                
-                .room-card {
-                    border: none;
-                    border-radius: 10px;
-                    overflow: hidden;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                    transition: all 0.3s ease;
-                    margin-bottom: 20px;
-                    background-color: #fff;
-                }
-                
-                .room-card:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-                }
-                
-                .room-card-header {
-                    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-                    color: white;
-                    padding: 15px 20px;
-                    border-bottom: none;
-                }
-                
-                .room-card-header h5 {
-                    font-weight: 700;
-                    margin: 0;
-                }
-                
-                .room-card-body {
-                    padding: 20px;
-                }
-                
-                .room-card-body p {
-                    margin-bottom: 10px;
-                    color: #555;
-                }
-                
-                .room-card-body i {
-                    margin-left: 8px;
-                    color: #6c757d;
-                }
-                
-                .room-card hr {
-                    margin: 15px 0;
-                    border-color: #eee;
-                }
-                
-                .slots-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                    gap: 12px;
-                    margin-top: 15px;
-                }
-                
-                .time-slot {
-                    padding: 12px;
-                    border-radius: 8px;
-                    text-align: center;
-                    cursor: pointer;
-                    font-size: 14px;
-                    border: 1px solid transparent;
-                    transition: all 0.2s ease;
-                    position: relative;
-                    overflow: hidden;
-                }
-                
-                .time-slot.available {
-                    background-color: #f0f9ff;
-                    border-color: #d1e7ff;
-                    color: #0d6efd;
-                }
-                
-                .time-slot.available:hover {
-                    background-color: #e2f0ff;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
-                }
-                
-                .time-slot.available.selected {
-                    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-                    color: white;
-                    font-weight: bold;
-                    border-color: #0b5ed7;
-                }
-                
-                .time-slot.booked {
-                    background-color: #fff8f0;
-                    border-color: #ffe8cc;
-                    color: #fd7e14;
-                }
-                
-                .time-slot.booked:hover {
-                    background-color: #ffeedb;
-                }
-                
-                .time-slot .slot-icon {
-                    margin-left: 5px;
-                }
-                
-                .time-slot .small {
-                    font-size: 12px;
-                    opacity: 0.9;
-                }
-                
-                .badge {
-                    font-weight: 500;
-                    padding: 5px 10px;
-                    border-radius: 50px;
-                }
-                
-                .badge-success {
-                    background-color: #198754;
-                }
-                
-                .badge-info {
-                    background-color: #0dcaf0;
-                }
-                
-                .loading-state {
-                    padding: 40px 0;
-                }
-                
-                .loading-state .spinner-border {
-                    width: 3rem;
-                    height: 3rem;
-                    border-width: 0.25em;
-                    color: #6a11cb;
-                }
-                
-                .loading-state p {
-                    margin-top: 15px;
-                    font-size: 16px;
-                    color: #6c757d;
-                }
-                
-                .alert {
-                    border-radius: 8px;
-                    padding: 15px;
-                }
-                
-                /* Animation for slots */
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                .time-slot {
-                    animation: fadeIn 0.3s ease forwards;
-                }
-                
-                /* Responsive adjustments */
-                @media (max-width: 768px) {
-                    .slots-grid {
-                        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                    }
-                    
-                    .filter-section .col-md-4 {
-                        margin-bottom: 15px;
-                    }
-                }
-            </style>
-        `;
-        $("head").append(styles);
-    }
+            <div class="loading-state text-center" style="display:none;">
+                <div class="spinner-border"></div>
+                <p>${__('جاري تحميل الغرف...')}</p>
+            </div>
+
+            <div class="room-list-container"></div>
+        </div>
+    `);
+}
+
+
 
     bind_events() {
         this.wrapper.on('change', '.branch-filter, .date-filter, .capacity-filter', () => this.load_rooms());
@@ -308,7 +108,7 @@ room_booking.RoomBooking.RoomSelector = class {
 
     render_rooms(rooms) {
         const $container = this.wrapper.find('.room-list-container').empty();
-        
+        console.log('Rendering rooms:', rooms);
         if (!rooms.length) {
             $container.html(`
                 <div class="col-12">
@@ -325,28 +125,28 @@ room_booking.RoomBooking.RoomSelector = class {
             this.state.slotsData[room.name] = room.available_slots || [];
             
             const $card = $(`
-                <div class="col-md-6 col-lg-4">
-                    <div class="card room-card h-100">
-                        <div class="card-header room-card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fa fa-door-open"></i> ${room.room_name}
-                            </h5>
-                            <span class="badge ${room.status === 'Available' ? 'badge-success' : 'badge-info'}">
-                                ${room.status}
-                            </span>
-                        </div>
-                        <div class="card-body room-card-body">
-                            <p><i class="fa fa-users"></i> ${room.no_of_seats} ${__('مقاعد')}</p>
-                            <p><i class="fa fa-money-bill-wave"></i> 
-                                ${this.format_currency(room.price_per_hour)}/${__('ساعة')}
-                            </p>
-                            <hr>
-                            <h6><i class="fa fa-clock"></i> ${__('الفترات المتاحة')}</h6>
-                            <div class="slots-grid" data-room="${room.name}"></div>
-                        </div>
-                    </div>
-                </div>
-            `);
+    <div class="room-card">
+        <div class="card room-card-inner h-100">
+            <div class="card-header room-card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fa fa-door-open"></i> ${room.room_name}
+                </h5>
+                <span class="badge ${room.status === 'Available' ? 'badge-success' : 'badge-info'}">
+                    ${room.status}
+                </span>
+            </div>
+            <div class="card-body room-card-body">
+                <p><i class="fa fa-users"></i> ${room.no_of_seats} ${__('مقاعد')}</p>
+                <p><i class="fa fa-money-bill-wave"></i> 
+                    ${this.format_currency(room.price_per_hour)}/${__('ساعة')}
+                </p>
+                <hr>
+                <h6><i class="fa fa-clock"></i> ${__('الفترات المتاحة')}</h6>
+                <div class="slots-grid" data-room="${room.name}"></div>
+            </div>
+        </div>
+    </div>
+`);
             
             $container.append($card);
             this.render_slots(room.name);

@@ -1,294 +1,96 @@
 frappe.provide("room_booking.RoomBooking");
 
-/**
- * التطبيق الرئيسي لنظام حجز الغرف
- * @class
- */
 room_booking.RoomBooking.Application = class {
-    constructor(wrapper) {
-        this._initProperties(wrapper);
-        this._setupDOM();
-        this._setupEventDelegation();
-        this._initializeComponents();
-        this._applyStyles();
-    }
+	constructor(wrapper) {
+		this._initProperties(wrapper);
+		this._initPOSOpeningHandler(); // تهيئة منطق فتح الفترة من ملف منفصل
+	}
 
-    // ----------------------------------------
-    // Initialization Methods
-    // ----------------------------------------
+	_initProperties(wrapper) {
+		this.wrapper = $(wrapper).find(".layout-main-section");
+		this.page = wrapper.page;
+		this._state = {
+			selectedRoom: null,
+			selectedSlot: null,
+			isLoading: false,
+			currentView: "booking",
+		};
+		this._components = {};
+        this.make_app();
 
-    /**
-     * تهيئة الخصائص الأساسية
-     * @private
-     */
-    _initProperties(wrapper) {
-        this.wrapper = $(wrapper).find(".layout-main-section");
-        this.page = wrapper.page;
-        this._state = {
-            selectedRoom: null,
-            selectedSlot: null,
-            isLoading: false,
-            currentView: 'booking'
-        };
-        this._components = {};
-    }
+	}
 
-    /**
-     * إعداد هيكل DOM الأساسي
-     * @private
-     */
-    _setupDOM() {
-        this.wrapper.html(`
-            <div class="room-booking-app">
-                <!-- شريط التحكم -->
-                <div class="app-controls">
-                    ${this._renderControlBar()}
-                </div>
-                
-                <!-- المحتوى الرئيسي -->
-                <div class="app-content">
-                    ${this._renderMainContent()}
-                </div>
-                
-                <!-- حالة التحميل -->
-                ${this._renderLoadingState()}
-            </div>
-        `);
-    }
+	_initPOSOpeningHandler() {
+		this.posHandler = new room_booking.RoomBooking.POSOpeningHandler(this);
+	}
 
-    // ----------------------------------------
-    // Rendering Methods
-    // ----------------------------------------
+	make_app() {
+		this.prepare_dom();
+		this.prepare_components();
+		// this.prepare_menu();
+		this.prepare_fullscreen_btn();
+	}
 
-    /**
-     * عرض شريط التحكم
-     * @private
-     */
-    _renderControlBar() {
-        return `
-            <div class="view-switcher">
-                <button class="btn btn-booking-view active" data-action="switch-view" data-view="booking">
-                    <i class="fa fa-calendar-plus"></i> ${__('حجز جديد')}
-                </button>
-                <button class="btn btn-management-view" data-action="switch-view" data-view="management">
-                    <i class="fa fa-list"></i> ${__('إدارة الحجوزات')}
-                </button>
-            </div>
-            <div class="app-actions">
-                <button class="btn btn-refresh" data-action="refresh">
-                    <i class="fa fa-sync-alt"></i>
-                </button>
-                <button class="btn btn-fullscreen" data-action="fullscreen">
-                    <i class="fa fa-expand"></i>
-                </button>
-            </div>
-        `;
-    }
-
-    /**
-     * عرض المحتوى الرئيسي
-     * @private
-     */
-    _renderMainContent() {
-        return `
+	prepare_dom() {
+		this.wrapper.html(`
+			<div class="app-content">
             <div class="booking-view">
-                <div class="row">
-                    <div class="col-md-8 room-selector-container"></div>
-                    <div class="col-md-4 booking-summary-container"></div>
-                </div>
+                <div class="room-selector-container"></div>
             </div>
-            <div class="management-view" style="display:none;">
-                <div class="booking-manager-container"></div>
-            </div>
-        `;
-    }
+			</div>
+		`);
+	}
 
-    /**
-     * عرض حالة التحميل
-     * @private
-     */
-    _renderLoadingState() {
-        return `
-            <div class="app-loading-state">
-                <div class="spinner"></div>
-                <p>${__('جاري التحميل...')}</p>
-            </div>
-        `;
-    }
+	prepare_components() {
+		this._initRoomSelector();
+	}
 
-    // ----------------------------------------
-    // Event Handling
-    // ----------------------------------------
 
-    /**
-     * إعداد تفويض الأحداث
-     * @private
-     */
-    _setupEventDelegation() {
-        this.wrapper.on('click', '[data-action]', (e) => {
-            const action = $(e.currentTarget).data('action');
-            this._handleAction(action, $(e.currentTarget).data());
-        });
-    }
+	_initRoomSelector() {
+		this._components.roomSelector = new room_booking.RoomBooking.RoomSelector({
+			wrapper: this.wrapper.find(".room-selector-container"),
+		});
+	}
 
-    /**
-     * معالجة الأحداث بناء على data-action
-     * @private
-     */
-    _handleAction(action, data) {
-        const actions = {
-            'switch-view': () => this._switchView(data.view),
-            'refresh': () => this._refreshData(),
-            'fullscreen': () => this._toggleFullscreen()
-        };
+    prepare_menu() {
+		this.page.clear_menu();
+		this.page.add_menu_item(__("Open Form View"), this.open_form_view(this), false, "Ctrl+F");
+		this.page.add_menu_item(__("Close the POS"), app.close_pos(this), false, "Shift+Ctrl+C");
+	}
+    open_form_view() {
+		frappe.model.sync(this.frm.doc);
+		frappe.set_route("Form", this.frm.doc.doctype, this.frm.doc.name);
+	}
 
-        if (actions[action]) {
-            actions[action]();
-        }
-    }
+	prepare_fullscreen_btn() {
+		this.page.page_actions.find(".custom-actions").empty();
+		this.page.add_button(__("Full Screen"), null, { btn_class: "btn-default fullscreen-btn" });
+		this.bind_fullscreen_events();
+	}
 
-    // ----------------------------------------
-    // Component Initialization
-    // ----------------------------------------
+	bind_fullscreen_events() {
+		this.$fullscreen_btn = this.page.page_actions.find(".fullscreen-btn");
 
-    /**
-     * تهيئة المكونات الأساسية
-     * @private
-     */
-    _initializeComponents() {
-        this._initRoomSelector();
-        this._initBookingSummary();
-        this._initBookingDialog();
-        this._initBookingManager();
-    }
+		this.$fullscreen_btn.on("click", function () {
+			if (!document.fullscreenElement) {
+				document.documentElement.requestFullscreen();
+			} else {
+				document.exitFullscreen();
+			}
+		});
 
-    /**
-     * تهيئة محدد الغرف
-     * @private
-     */
-    _initRoomSelector() {
-        this._components.roomSelector = new room_booking.RoomBooking.RoomSelector({
-            wrapper: this.wrapper.find('.room-selector-container'),
-            events: {
-                slotSelected: (args) => this._handleSlotSelected(args),
-                bookedSlotClicked: (args) => this._handleBookedSlotClick(args)
-            }
-        });
-    }
+		$(document).on("fullscreenchange", this.handle_fullscreen_change_event.bind(this));
+	}
 
-    // ... (بقية دوال تهيئة المكونات بنفس النمط)
-    
-    // ----------------------------------------
-    // State Management
-    // ----------------------------------------
+	handle_fullscreen_change_event() {
+		const enable_label = __("Full Screen");
+		const exit_label = __("Exit Full Screen");
 
-    /**
-     * تبديل بين واجهات التطبيق
-     * @private
-     */
-    _switchView(view) {
-        if (this._state.currentView === view) return;
-        
-        this._state.currentView = view;
-        
-        const viewActions = {
-            'booking': () => {
-                this.wrapper.find('.booking-view').show();
-                this.wrapper.find('.management-view').hide();
-                this._updateActiveViewButtons('booking');
-            },
-            'management': () => {
-                this.wrapper.find('.booking-view').hide();
-                this.wrapper.find('.management-view').show();
-                this._updateActiveViewButtons('management');
-                this._refreshBookings();
-            }
-        };
-
-        viewActions[view]();
-    }
-
-    /**
-     * تحديث أزرار عرض الواجهة
-     * @private
-     */
-    _updateActiveViewButtons(activeView) {
-        this.wrapper.find('.btn-booking-view').toggleClass('active', activeView === 'booking');
-        this.wrapper.find('.btn-management-view').toggleClass('active', activeView === 'management');
-    }
-
-    // ... (بقية الدوال بنفس النمط مع تحسين التصميم)
-    
-    // ----------------------------------------
-    // Styles
-    // ----------------------------------------
-
-    /**
-     * تطبيق الأنماط على التطبيق
-     * @private
-     */
-    _applyStyles() {
-        const styles = `
-            .room-booking-app {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                padding: 20px;
-            }
-            
-            .app-controls {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 20px;
-                background: #f8f9fa;
-                padding: 10px 15px;
-                border-radius: 5px;
-                align-items: center;
-            }
-            
-            .view-switcher .btn {
-                margin-right: 5px;
-                transition: all 0.3s ease;
-            }
-            
-            .btn.active {
-                background-color: var(--primary-color, #4CAF50);
-                color: white;
-            }
-            
-            .app-loading-state {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(255,255,255,0.9);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-                backdrop-filter: blur(2px);
-            }
-            
-            .app-loading-state .spinner {
-                border: 5px solid #f3f3f3;
-                border-top: 5px solid var(--primary-color, #3498db);
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-            }
-            
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        `;
-
-        $('<style>').text(styles).appendTo('head');
-    }
+		this.$fullscreen_btn.text(document.fullscreenElement ? exit_label : enable_label);
+	}
 };
 
 // تهيئة التطبيق عند تحميل الصفحة
-frappe.pages['roombooking'].on_page_load = function(wrapper) {
-    new room_booking.RoomBooking.Application(wrapper);
+frappe.pages["roombooking"].on_page_load = function (wrapper) {
+	new room_booking.RoomBooking.Application(wrapper);
 };

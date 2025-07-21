@@ -1,215 +1,186 @@
-/* room_booking.css */
 :root {
-  /* متغيرات التصميم */
   --header-height: 60px;
   --sidebar-width: 300px;
-  --border-radius: 8px;
-  --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --border-radius: 10px;
+  --box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   --transition: all 0.3s ease;
-  
-  /* متغيرات الألوان */
-  --primary-color: #4e73df;
+
+  --primary-color: #4caf50;
+  --primary-color-light: #e8f5e9;
+  --primary-color-dark: #388e3c;
+
   --success-color: #2e7d32;
-  --error-color: #c62828;
-  --warning-color: #F57F17;
-  --info-color: #2196F3;
-  
-  /* ألوان الوضع الفاتح */
-  --light-bg: #f8f9fa;
-  --light-text: #333;
-  --light-card: #fff;
-  --light-border: #e0e0e0;
-  
-  /* ألوان الوضع المظلم */
-  --dark-bg: #1a1a1a;
-  --dark-text: #f0f0f0;
-  --dark-card: #2d2d2d;
-  --dark-border: #444;
+  --error-color: #e53935;
+  --warning-color: #f9a825;
+  --info-color: #42a5f5;
+
+  --light-bg: #f9fbfa;
+  --light-text: #2e2e2e;
+  --light-card: #ffffff;
+  --light-border: #d6e0d5;
 }
 
-/* أنماط أساسية */
+/* التطبيق */
 .room-booking-app {
   font-family: 'Tajawal', 'Segoe UI', sans-serif;
   direction: rtl;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
   background-color: var(--light-bg);
   color: var(--light-text);
 }
 
-/* شريط التحكم العلوي */
-.app-controls {
-  height: var(--header-height);
-  background: var(--light-card);
-  box-shadow: var(--box-shadow);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-/* منطقة المحتوى الرئيسية */
+/* محتوى التطبيق */
 .app-content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-  position: relative;
+  padding: 24px;
 }
 
-/* لوحة الغرف الرئيسية */
-.room-main-panel {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
+/* ====== الفلاتر ====== */
+.filter-section {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  align-content: start;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-/* لوحة الملخص الجانبية */
-.booking-summary-panel {
-  width: var(--sidebar-width);
-  border-right: 1px solid var(--light-border);
-  background: var(--light-card);
-  padding: 20px;
-  overflow-y: auto;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+.filter-section label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
 }
 
-/* بطاقات الغرف */
+.filter-section .form-control {
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+
+/* ====== قائمة الغرف ====== */
+.room-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* ====== بطاقة الغرفة ====== */
 .room-card {
   background: var(--light-card);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
-  overflow: hidden;
+  border: 1px solid var(--light-border);
   transition: var(--transition);
-  min-height: 200px;
   display: flex;
   flex-direction: column;
 }
 
 .room-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .room-card-header {
-  padding: 15px;
-  background: var(--primary-color);
+  background: linear-gradient(to left, var(--primary-color), var(--primary-color-dark));
   color: white;
+  padding: 16px 20px;
+  font-size: 1.1rem;
   font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .room-card-body {
-  padding: 15px;
+  padding: 16px 20px;
   flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-/* الفترات الزمنية */
+.room-card-body p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* ====== شبكة الفترات ====== */
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .time-slot {
+  background: #f1f1f1;
   border: 1px solid var(--light-border);
-  border-radius: calc(var(--border-radius) - 2px);
-  padding: 8px 5px;
+  border-radius: 8px;
+  padding: 10px 8px;
+  font-size: 0.85rem;
   text-align: center;
-  cursor: pointer;
   transition: var(--transition);
-  font-size: 0.9em;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 60px;
+}
+
+.time-slot .slot-icon {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  opacity: 0.7;
 }
 
 .time-slot.available {
-  background-color: rgba(76, 175, 80, 0.1);
-  border-color: rgba(76, 175, 80, 0.3);
+  background-color: var(--primary-color-light);
+  border-color: #a5d6a7;
+  color: var(--success-color);
 }
 
 .time-slot.booked {
-  background-color: rgba(244, 67, 54, 0.1);
-  border-color: rgba(244, 67, 54, 0.3);
+  background-color: #ffebee;
+  border-color: #e57373;
+  color: var(--error-color);
+}
+
+.time-slot.expired {
+  background-color: #eeeeee;
+  border-color: #ccc;
+  color: #888;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.time-slot.selected {
+  border: 2px solid var(--primary-color-dark);
+  background-color: #dcedc8;
 }
 
 .time-slot:hover {
   transform: scale(1.05);
+  z-index: 1;
 }
 
-/* عناصر التحكم */
-.view-switcher {
-  display: flex;
-  gap: 10px;
+/* ====== تحميل البيانات ====== */
+.loading-state {
+  padding: 40px 0;
+  font-size: 1rem;
+  color: #666;
+  text-align: center;
 }
 
-.app-actions {
-  display: flex;
-  gap: 10px;
+.loading-state .spinner-border {
+  margin-bottom: 10px;
 }
 
-.btn {
-  padding: 8px 15px;
-  border-radius: var(--border-radius);
-  border: none;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn.active {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.btn i {
-  font-size: 1em;
-}
-
-/* نظام السمات */
-.theme-dark .room-booking-app {
-  background-color: var(--dark-bg);
-  color: var(--dark-text);
-}
-
-.theme-dark .app-controls,
-.theme-dark .booking-summary-panel,
-.theme-dark .room-card {
-  background: var(--dark-card);
-  border-color: var(--dark-border);
-}
-
-/* تكوينات للعرض على أجهزة مختلفة */
-@media (max-width: 992px) {
+/* ====== استجابة الشاشات ====== */
+@media (max-width: 768px) {
   .app-content {
-    flex-direction: column;
+    padding: 16px;
   }
-  
-  .booking-summary-panel {
-    width: 100%;
-    border-right: none;
-    border-top: 1px solid var(--light-border);
-    order: -1;
-  }
-}
 
-@media (max-width: 576px) {
-  .room-card-body {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-  }
-  
-  .app-controls {
-    flex-direction: column;
-    height: auto;
-    padding: 10px;
-  }
-  
-  .view-switcher, .app-actions {
-    width: 100%;
-    justify-content: center;
-    margin: 5px 0;
+  .slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
 }
