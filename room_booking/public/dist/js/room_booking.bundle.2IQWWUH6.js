@@ -70,20 +70,6 @@
                     <p>${__("\u062C\u0627\u0631\u064A \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u063A\u0631\u0641...")}</p>
                 </div>
 
-                <div class="selection-summary alert alert-info mt-3" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong><i class="fa fa-check-circle"></i> ${__("Selected")}:</strong> 
-                            <span class="selected-period"></span> | 
-                            <span class="selected-duration"></span> | 
-                            <span class="selected-price"></span>
-                        </div>
-                        <button class="btn btn-primary btn-book">
-                            <i class="fa fa-calendar-check"></i> ${__("Book Now")}
-                        </button>
-                    </div>
-                </div>
-
                 <div class="room-list-container row mt-4"></div>
             </div>
         `);
@@ -96,63 +82,196 @@
                 .room-booking-container {
                     font-family: 'Tajawal', 'Segoe UI', sans-serif;
                     direction: rtl;
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                }
+                
+                .filter-section {
+                    background-color: #fff;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                    margin-bottom: 20px;
+                }
+                
+                .filter-section label {
+                    font-weight: 600;
+                    color: #495057;
+                    margin-bottom: 8px;
+                    display: block;
+                }
+                
+                .filter-section .form-control {
+                    border-radius: 6px;
+                    border: 1px solid #e0e0e0;
+                    padding: 10px 15px;
+                    height: auto;
+                }
+                
+                .room-list-container {
+                    margin: 0 -10px;
+                }
+                
+                .room-card {
+                    border: none;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    transition: all 0.3s ease;
+                    margin-bottom: 20px;
+                    background-color: #fff;
+                }
+                
+                .room-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+                }
+                
+                .room-card-header {
+                    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+                    color: white;
+                    padding: 15px 20px;
+                    border-bottom: none;
+                }
+                
+                .room-card-header h5 {
+                    font-weight: 700;
+                    margin: 0;
+                }
+                
+                .room-card-body {
+                    padding: 20px;
+                }
+                
+                .room-card-body p {
+                    margin-bottom: 10px;
+                    color: #555;
+                }
+                
+                .room-card-body i {
+                    margin-left: 8px;
+                    color: #6c757d;
+                }
+                
+                .room-card hr {
+                    margin: 15px 0;
+                    border-color: #eee;
                 }
                 
                 .slots-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                    gap: 10px;
+                    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                    gap: 12px;
                     margin-top: 15px;
                 }
                 
                 .time-slot {
-                    padding: 10px;
-                    border-radius: 6px;
+                    padding: 12px;
+                    border-radius: 8px;
                     text-align: center;
                     cursor: pointer;
-                    font-size: 13px;
-                    border: 1px solid #ddd;
-                    transition: all 0.3s ease;
+                    font-size: 14px;
+                    border: 1px solid transparent;
+                    transition: all 0.2s ease;
                     position: relative;
                     overflow: hidden;
                 }
                 
                 .time-slot.available {
-                    background-color: #e8f5e9;
-                    border-color: #a5d6a7;
-                    color: #2e7d32;
+                    background-color: #f0f9ff;
+                    border-color: #d1e7ff;
+                    color: #0d6efd;
                 }
                 
                 .time-slot.available:hover {
-                    background-color: #c8e6c9;
+                    background-color: #e2f0ff;
                     transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
                 }
                 
                 .time-slot.available.selected {
-                    background-color: #4caf50;
+                    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
                     color: white;
                     font-weight: bold;
+                    border-color: #0b5ed7;
                 }
                 
                 .time-slot.booked {
-                    background-color: #e3f2fd;
-                    border-color: #90caf9;
-                    color: #1565c0;
+                    background-color: #fff8f0;
+                    border-color: #ffe8cc;
+                    color: #fd7e14;
                 }
                 
                 .time-slot.booked:hover {
-                    background-color: #bbdefb;
+                    background-color: #ffeedb;
                 }
                 
                 .time-slot .slot-icon {
                     margin-left: 5px;
                 }
                 
-                .selection-summary {
-                    animation: fadeIn 0.3s ease;
-                    background-color: #e3f2fd;
-                    border-color: #bbdefb;
+                .time-slot .small {
+                    font-size: 12px;
+                    opacity: 0.9;
+                }
+                
+                .badge {
+                    font-weight: 500;
+                    padding: 5px 10px;
+                    border-radius: 50px;
+                }
+                
+                .badge-success {
+                    background-color: #198754;
+                }
+                
+                .badge-info {
+                    background-color: #0dcaf0;
+                }
+                
+                .loading-state {
+                    padding: 40px 0;
+                }
+                
+                .loading-state .spinner-border {
+                    width: 3rem;
+                    height: 3rem;
+                    border-width: 0.25em;
+                    color: #6a11cb;
+                }
+                
+                .loading-state p {
+                    margin-top: 15px;
+                    font-size: 16px;
+                    color: #6c757d;
+                }
+                
+                .alert {
+                    border-radius: 8px;
+                    padding: 15px;
+                }
+                
+                /* Animation for slots */
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                .time-slot {
+                    animation: fadeIn 0.3s ease forwards;
+                }
+                
+                /* Responsive adjustments */
+                @media (max-width: 768px) {
+                    .slots-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                    }
+                    
+                    .filter-section .col-md-4 {
+                        margin-bottom: 15px;
+                    }
                 }
             </style>
         `;
@@ -162,7 +281,6 @@
       this.wrapper.on("change", ".branch-filter, .date-filter, .capacity-filter", () => this.load_rooms());
       this.wrapper.on("click", ".time-slot.available", (e) => this.handle_slot_click(e));
       this.wrapper.on("click", ".time-slot.booked", (e) => this.handle_booked_slot_click(e));
-      this.wrapper.on("click", ".btn-book", () => this.handle_book_click());
     }
     async load_branches() {
       try {
@@ -214,9 +332,9 @@
       rooms.forEach((room) => {
         this.state.slotsData[room.name] = room.available_slots || [];
         const $card = $(`
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card room-card h-100">
+                        <div class="card-header room-card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="fa fa-door-open"></i> ${room.room_name}
                             </h5>
@@ -224,7 +342,7 @@
                                 ${room.status}
                             </span>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body room-card-body">
                             <p><i class="fa fa-users"></i> ${room.no_of_seats} ${__("\u0645\u0642\u0627\u0639\u062F")}</p>
                             <p><i class="fa fa-money-bill-wave"></i> 
                                 ${this.format_currency(room.price_per_hour)}/${__("\u0633\u0627\u0639\u0629")}
@@ -291,6 +409,9 @@
       };
       if ($slot.hasClass("selected")) {
         this.state.selectedSlots.push(slotData);
+        this.show_booking_dialog(slotData);
+        this.wrapper.find(".time-slot.selected").not($slot).removeClass("selected");
+        this.state.selectedSlots = [slotData];
       } else {
         this.state.selectedSlots = this.state.selectedSlots.filter(
           (s) => !(s.room === slotData.room && s.start === slotData.start)
@@ -314,17 +435,37 @@
         booking_id: $slot.data("booking-id"),
         status: $slot.data("status")
       };
-      if (this.events.booked_slot_clicked) {
-        this.events.booked_slot_clicked(bookingInfo);
-      }
+      const dialog = new frappe.ui.Dialog({
+        title: __("\u062E\u064A\u0627\u0631\u0627\u062A \u0627\u0644\u062D\u062C\u0632"),
+        fields: [
+          {
+            fieldname: "action",
+            fieldtype: "Select",
+            label: __("\u0627\u062E\u062A\u0631 \u0627\u0644\u0625\u062C\u0631\u0627\u0621"),
+            options: [
+              { label: __("\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062D\u062C\u0632"), value: "update" },
+              { label: __("\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062D\u062C\u0632"), value: "cancel" },
+              { label: __("\u062A\u0641\u0631\u064A\u063A \u0627\u0644\u063A\u0631\u0641\u0629"), value: "clear" }
+            ],
+            reqd: 1
+          }
+        ],
+        primary_action_label: __("\u062A\u0646\u0641\u064A\u0630"),
+        primary_action: async (values) => {
+          dialog.hide();
+          if (values.action === "update") {
+            this.open_update_booking_dialog(bookingInfo);
+          } else if (values.action === "cancel") {
+            await this.cancel_booking(bookingInfo.booking_id);
+          } else if (values.action === "clear") {
+            await this.clear_room(bookingInfo.room, this.wrapper.find(".date-filter").val());
+          }
+          this.reload_rooms();
+        }
+      });
+      dialog.show();
     }
-    handle_book_click() {
-      if (!this.state.selectedSlots.length)
-        return;
-      const slotData = this.state.selectedSlots[0];
-      this.show_booking_dialog(slotData);
-    }
-    show_booking_dialog(slotData) {
+    show_booking_dialog(slotData, is_update = false) {
       if (this.state.currentDialog) {
         this.state.currentDialog.hide();
       }
@@ -334,28 +475,35 @@
         const parts = timeStr.split(":");
         return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : "00:00";
       };
+      const defaultCustomer = is_update ? slotData.customer_name || "" : "";
+      const defaultBookingDate = this.wrapper.find(".date-filter").val() || frappe.datetime.get_today();
+      const defaultStartTime = formatTimeForDisplay(slotData.start);
+      const defaultEndTime = formatTimeForDisplay(slotData.end);
+      const defaultHours = this.calculate_duration(slotData.start, slotData.end);
+      const defaultAmount = slotData.price ? parseFloat(slotData.price).toFixed(2) : "0.00";
       const dialog = new frappe.ui.Dialog({
-        title: __("\u062D\u062C\u0632 \u063A\u0631\u0641\u0629"),
+        title: is_update ? __("\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062D\u062C\u0632") : __("\u062D\u062C\u0632 \u063A\u0631\u0641\u0629"),
         fields: [
           {
             label: __("\u0627\u0633\u0645 \u0627\u0644\u0639\u0645\u064A\u0644"),
             fieldname: "customer",
             fieldtype: "Link",
             options: "Customer",
-            reqd: 1
+            reqd: 1,
+            default: defaultCustomer
           },
           {
             label: __("\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u062D\u062C\u0632"),
             fieldname: "booking_date",
             fieldtype: "Date",
-            default: this.wrapper.find(".date-filter").val(),
-            read_only: 1
+            default: defaultBookingDate,
+            read_only: !is_update
           },
           {
             label: __("\u0648\u0642\u062A \u0627\u0644\u062F\u062E\u0648\u0644"),
             fieldname: "start_time",
             fieldtype: "Data",
-            default: formatTimeForDisplay(slotData.start),
+            default: defaultStartTime,
             reqd: 1,
             description: __("\u0627\u0644\u062A\u0646\u0633\u064A\u0642: HH:mm (\u0645\u062B\u0627\u0644: 14:30)")
           },
@@ -363,38 +511,87 @@
             label: __("\u0639\u062F\u062F \u0627\u0644\u0633\u0627\u0639\u0627\u062A"),
             fieldname: "hours",
             fieldtype: "Float",
-            default: this.calculate_duration(slotData.start, slotData.end),
+            default: defaultHours,
             reqd: 1
           },
           {
             label: __("\u0648\u0642\u062A \u0627\u0644\u062E\u0631\u0648\u062C"),
             fieldname: "end_time",
             fieldtype: "Data",
-            default: formatTimeForDisplay(slotData.end),
-            read_only: 1
+            default: defaultEndTime,
+            read_only: true
           },
           {
             label: __("\u0627\u0644\u0633\u0639\u0631"),
             fieldname: "amount",
-            fieldtype: "Currency",
-            default: slotData.price,
-            read_only: 1
+            fieldtype: "Data",
+            default: __("\u0631.\u0633") + " " + defaultAmount,
+            read_only: true
           },
           {
             label: __("\u0645\u0644\u0627\u062D\u0638\u0627\u062A"),
             fieldname: "notes",
-            fieldtype: "Text"
+            fieldtype: "Text",
+            default: slotData.notes || ""
           }
         ],
-        primary_action_label: __("\u062D\u062C\u0632"),
-        primary_action: (values) => {
+        primary_action_label: is_update ? __("\u062A\u062D\u062F\u064A\u062B") : __("\u062D\u062C\u0632"),
+        primary_action: async (values) => {
           if (!this.validateTimeFormat(values.start_time)) {
             frappe.msgprint(__("\u0635\u064A\u063A\u0629 \u0648\u0642\u062A \u0627\u0644\u062F\u062E\u0648\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629. \u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 HH:mm"));
             return;
           }
           values.start_time = this.format_time_for_backend(values.start_time);
           values.end_time = this.format_time_for_backend(values.end_time);
-          this.submit_booking(values, slotData);
+          this.set_loading(true);
+          try {
+            if (is_update) {
+              await frappe.call({
+                method: "room_booking.api.update_booking",
+                args: {
+                  booking_id: slotData.booking_id,
+                  booking: JSON.stringify({
+                    rental_room: slotData.room,
+                    start_datetime: `${values.booking_date} ${values.start_time}`,
+                    end_datetime: `${values.booking_date} ${values.end_time}`,
+                    customer_name: values.customer,
+                    notes: values.notes,
+                    amount: values.amount.replace(/[^\d.]/g, "")
+                  })
+                },
+                freeze: true
+              });
+              frappe.show_alert({ message: __("\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u062D\u062C\u0632 \u0628\u0646\u062C\u0627\u062D"), indicator: "green" });
+            } else {
+              await frappe.call({
+                method: "room_booking.api.create_booking",
+                args: {
+                  booking: [{
+                    rental_room: slotData.room,
+                    start_datetime: `${values.booking_date} ${values.start_time}`,
+                    end_datetime: `${values.booking_date} ${values.end_time}`,
+                    customer_name: values.customer,
+                    notes: values.notes,
+                    amount: values.amount.replace(/[^\d.]/g, "")
+                  }]
+                },
+                freeze: true
+              });
+              frappe.show_alert({ message: __("\u062A\u0645 \u0627\u0644\u062D\u062C\u0632 \u0628\u0646\u062C\u0627\u062D"), indicator: "green" });
+            }
+            dialog.hide();
+            this.reload_rooms();
+            if (is_update && this.events.booking_updated) {
+              this.events.booking_updated(slotData.booking_id);
+            }
+            if (!is_update && this.events.booking_created) {
+              this.events.booking_created();
+            }
+          } catch (error) {
+            frappe.msgprint({ title: __("\u062E\u0637\u0623"), message: error.message || error, indicator: "red" });
+          } finally {
+            this.set_loading(false);
+          }
         }
       });
       dialog.fields_dict.start_time.$input.on("change", () => {
@@ -407,11 +604,11 @@
         this.update_booking_times(dialog, slotData, "start");
       });
       dialog.fields_dict.hours.$input.on("change", () => {
-        const hours = parseFloat(dialog.get_value("hours"));
-        if (hours < 1 || hours > 24) {
+        let hours = parseFloat(dialog.get_value("hours"));
+        if (isNaN(hours) || hours < 1 || hours > 24) {
           frappe.msgprint(__("\u0639\u062F\u062F \u0627\u0644\u0633\u0627\u0639\u0627\u062A \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0628\u064A\u0646 1 \u0648 24"));
           dialog.set_value("hours", 1);
-          return;
+          hours = 1;
         }
         this.update_booking_times(dialog, slotData, "hours");
       });
@@ -453,43 +650,40 @@
       const endMinutes = totalMinutes % 60;
       return `${String(endHours).padStart(2, "0")}:${String(endMinutes).padStart(2, "0")}`;
     }
-    async submit_booking(values, slotData) {
+    async cancel_booking(booking_id) {
       try {
-        this.set_loading(true);
-        const bookingData = {
-          rental_room: slotData.room,
-          start_datetime: `${values.booking_date} ${values.start_time}`,
-          end_datetime: `${values.booking_date} ${values.end_time}`,
-          customer_name: values.customer,
-          notes: values.notes,
-          amount: values.amount
-        };
         await frappe.call({
-          method: "room_booking.api.create_booking",
-          args: { booking: bookingData },
+          method: "room_booking.api.cancel_booking",
+          args: { booking_id },
           freeze: true
         });
-        frappe.show_alert({
-          message: __("\u062A\u0645 \u0627\u0644\u062D\u062C\u0632 \u0628\u0646\u062C\u0627\u062D"),
-          indicator: "green"
-        });
-        if (this.state.currentDialog) {
-          this.state.currentDialog.hide();
-        }
-        this.reload_rooms();
-        if (this.events.booking_created) {
-          this.events.booking_created(bookingData);
-        }
+        frappe.show_alert({ message: __("\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062D\u062C\u0632 \u0628\u0646\u062C\u0627\u062D"), indicator: "green" });
       } catch (error) {
-        console.error("\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062D\u062C\u0632:", error);
-        frappe.msgprint({
-          title: __("\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062D\u062C\u0632"),
-          message: __("\u062D\u062F\u062B \u062E\u0637\u0623 \u0623\u062B\u0646\u0627\u0621 \u0645\u062D\u0627\u0648\u0644\u0629 \u0627\u0644\u062D\u062C\u0632: ") + error.message,
-          indicator: "red"
-        });
-      } finally {
-        this.set_loading(false);
+        frappe.msgprint({ title: __("\u062E\u0637\u0623"), message: __("\u0641\u0634\u0644 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062D\u062C\u0632") + ": " + error.message, indicator: "red" });
       }
+    }
+    async clear_room(room, date) {
+      try {
+        await frappe.call({
+          method: "room_booking.api.clear_room",
+          args: { room, date },
+          freeze: true
+        });
+        frappe.show_alert({ message: __("\u062A\u0645 \u062A\u0641\u0631\u064A\u063A \u0627\u0644\u063A\u0631\u0641\u0629 \u0628\u0646\u062C\u0627\u062D"), indicator: "green" });
+      } catch (error) {
+        frappe.msgprint({ title: __("\u062E\u0637\u0623"), message: __("\u0641\u0634\u0644 \u062A\u0641\u0631\u064A\u063A \u0627\u0644\u063A\u0631\u0641\u0629") + ": " + error.message, indicator: "red" });
+      }
+    }
+    open_update_booking_dialog(bookingInfo) {
+      const slotData = {
+        room: bookingInfo.room,
+        start: bookingInfo.start,
+        end: bookingInfo.end,
+        price: 0,
+        booking_id: bookingInfo.booking_id,
+        status: bookingInfo.status
+      };
+      this.show_booking_dialog(slotData, true);
     }
     update_selection_summary() {
       const $summary = this.wrapper.find(".selection-summary");
@@ -2040,4 +2234,4 @@
     new room_booking.RoomBooking.Application(wrapper);
   };
 })();
-//# sourceMappingURL=room_booking.bundle.YKQDAOUK.js.map
+//# sourceMappingURL=room_booking.bundle.2IQWWUH6.js.map
