@@ -27,6 +27,8 @@ app_license = "mit"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/room_booking/css/room_booking.css"
 # app_include_js = "/assets/room_booking/js/room_booking.js"
+app_include_css = "/assets/room_booking/css/room_selector.css"
+
 
 
 page_routes = [

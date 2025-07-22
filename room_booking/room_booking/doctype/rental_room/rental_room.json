@@ -14,13 +14,18 @@
   "branch",
   "location",
   "price_per_hour",
+  "room_arrangement",
   "column_break_gpes",
   "start_time",
   "end_time",
   "period_duration",
   "column_break_hifd",
   "description",
-  "status"
+  "status",
+  "colors_details_section",
+  "available_color",
+  "booked_color",
+  "expired_color"
  ],
  "fields": [
   {
@@ -98,12 +103,38 @@
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "label": "image"
+  },
+  {
+   "description": "in terms of space",
+   "fieldname": "room_arrangement",
+   "fieldtype": "Float",
+   "label": "Room arrangement"
+  },
+  {
+   "fieldname": "colors_details_section",
+   "fieldtype": "Section Break",
+   "label": "Colors Details"
+  },
+  {
+   "fieldname": "available_color",
+   "fieldtype": "Color",
+   "label": "Available Color"
+  },
+  {
+   "fieldname": "booked_color",
+   "fieldtype": "Color",
+   "label": "Booked Color"
+  },
+  {
+   "fieldname": "expired_color",
+   "fieldtype": "Color",
+   "label": "Expired Color"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-12 15:54:24.515420",
+ "modified": "2025-07-22 02:35:48.997377",
  "modified_by": "Administrator",
  "module": "Room Booking",
  "name": "Rental Room",

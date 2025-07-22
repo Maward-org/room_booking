@@ -58,6 +58,35 @@ def get_booked_rooms():
 
 
 
+# @frappe.whitelist()
+# def get_available_rooms_with_slots(date=None, branch=None, capacity=None):
+#     if not date:
+#         date = frappe.utils.today()
+
+#     filters = {"status": "Available"}
+#     if branch:
+#         filters["branch"] = branch
+#     if capacity:
+#         filters["no_of_seats"] = [">=", cint(capacity)]
+
+#     rooms = frappe.get_all(
+#         "Rental Room",
+#         filters=filters,
+#         fields=[
+#             "name", "room_name", "branch", "status", "no_of_seats",
+#             "description", "room_code", "location", "start_time",
+#             "end_time", "period_duration", "price_per_hour"
+#         ]
+#     )
+
+#     rooms_with_slots = []
+#     for room in rooms:
+#         available_slots = get_available_slots_for_room(room['name'], date, room)
+#         room['available_slots'] = available_slots
+#         rooms_with_slots.append(room)
+
+#     return rooms_with_slots
+
 @frappe.whitelist()
 def get_available_rooms_with_slots(date=None, branch=None, capacity=None):
     if not date:
@@ -75,92 +104,212 @@ def get_available_rooms_with_slots(date=None, branch=None, capacity=None):
         fields=[
             "name", "room_name", "branch", "status", "no_of_seats",
             "description", "room_code", "location", "start_time",
-            "end_time", "period_duration", "price_per_hour"
+            "end_time", "period_duration", "price_per_hour", "available_color" , "expired_color" , "booked_color"
+
         ]
+        , order_by="room_arrangement"  # Optional: order by room name
     )
 
     rooms_with_slots = []
+    today = getdate(date)
+
     for room in rooms:
+        # 📌 1. تحديد السعر حسب Rental Pricing
+        price_per_hour = 0.0
+        rental_price = frappe.db.sql("""
+            SELECT price_per_hour FROM `tabRental Pricing`
+            WHERE rental_room = %s AND %s BETWEEN effective_from AND effective_to
+            ORDER BY effective_from DESC LIMIT 1
+        """, (room['name'], today), as_dict=1)
+
+        if rental_price:
+            price_per_hour = flt(rental_price[0].price_per_hour)
+        elif room.get("price_per_hour"):
+            price_per_hour = flt(room["price_per_hour"])
+
+        room["price_per_hour"] = price_per_hour  # ✅ السعر النهائي
+
+        # 📌 2. جلب الفترات الزمنية المتاحة (مع نفس room)
         available_slots = get_available_slots_for_room(room['name'], date, room)
         room['available_slots'] = available_slots
+
         rooms_with_slots.append(room)
 
     return rooms_with_slots
 
 
+
+# def get_available_slots_for_room(room_name, date, room_doc=None):
+#     if not room_doc:
+#         room_doc = frappe.get_cached_doc("Rental Room", room_name)
+
+#     booking_date = getdate(date)
+    
+
+#     opening_time = get_time(room_doc.start_time)
+#     closing_time = get_time(room_doc.end_time)
+#     # frappe.throw(_(f"Opening Time: {opening_time}, Closing Time: {closing_time}"))
+
+#     period_duration = cint(room_doc.get("period_duration", 60))
+
+#     room_price_doc = None
+#     all_room_price = frappe.get_all("Rental Pricing", filters={"rental_room": room_name}, fields=["name"])
+#     if all_room_price:
+#         room_price_doc = frappe.get_doc("Rental Pricing", all_room_price[0]["name"])
+
+#     now = now_datetime()
+#     today = now.date()
+
+#     if booking_date == today:
+#         start_dt = max(datetime.combine(booking_date, opening_time), now)
+#     else:
+#         start_dt = datetime.combine(booking_date, opening_time)
+
+#     end_dt = datetime.combine(booking_date, closing_time)
+
+#     slots = []
+#     current = start_dt
+
+#     existing_bookings = frappe.db.sql("""
+#         SELECT name, start_time, end_time FROM `tabRoom Booking`
+#         WHERE rental_room=%s AND booking_date=%s
+#           AND reservation_status NOT IN ('Cancelled', 'Completed')
+#     """, (room_name, booking_date), as_dict=1)
+
+#     while current + timedelta(minutes=period_duration) <= end_dt:
+#         slot_end = current + timedelta(minutes=period_duration)
+
+#         is_booked = any(
+#             not (slot_end.time() <= get_time(b.start_time) or current.time() >= get_time(b.end_time))
+#             for b in existing_bookings
+#         )
+        
+
+#         is_expired = booking_date == today and slot_end <= now
+#         if is_booked:
+#             status = "Booked"
+#         elif is_expired:
+#             status = "Expired"
+#         else:
+#             status = "Available"
+
+#         if room_price_doc and room_price_doc.price_per_hour is not None:
+#             slot_price = flt(room_price_doc.price_per_hour) * flt(period_duration)
+#         elif room_doc.price_per_hour:
+#             slot_price = flt(room_doc.price_per_hour) * flt(period_duration)
+#         else:
+#             slot_price = 0.0  
+
+#         slots.append({
+#             "start_time": current.strftime("%H:%M"),
+#             "end_time": slot_end.strftime("%H:%M"),
+#             "price": round(slot_price, 2),
+#             "booked": is_booked,
+#             "expired": is_expired,
+#             "status": status
+#         })
+
+#         current = slot_end
+
+#     return merge_slots(slots)
+
 def get_available_slots_for_room(room_name, date, room_doc=None):
+    from datetime import datetime
+
     if not room_doc:
         room_doc = frappe.get_cached_doc("Rental Room", room_name)
 
     booking_date = getdate(date)
-    
+    now = now_datetime()
+    now_time = now.time()
 
     opening_time = get_time(room_doc.start_time)
     closing_time = get_time(room_doc.end_time)
-    # frappe.throw(_(f"Opening Time: {opening_time}, Closing Time: {closing_time}"))
 
-    period_duration = cint(room_doc.get("period_duration", 60))
+    day_start = datetime.combine(booking_date, opening_time)
+    day_end = datetime.combine(booking_date, closing_time)
 
-    room_price_doc = None
-    all_room_price = frappe.get_all("Rental Pricing", filters={"rental_room": room_name}, fields=["name"])
-    if all_room_price:
-        room_price_doc = frappe.get_doc("Rental Pricing", all_room_price[0]["name"])
-
-    now = now_datetime()
+    # 🧠 تحديد السعر المعتمد
+    price_per_hour = 0.0
     today = now.date()
 
-    if booking_date == today:
-        start_dt = max(datetime.combine(booking_date, opening_time), now)
-    else:
-        start_dt = datetime.combine(booking_date, opening_time)
+    rental_price = frappe.db.sql("""
+        SELECT price_per_hour FROM `tabRental Pricing`
+        WHERE rental_room = %s AND %s BETWEEN effective_from AND effective_to
+        ORDER BY effective_from DESC LIMIT 1
+    """, (room_name, today), as_dict=1)
 
-    end_dt = datetime.combine(booking_date, closing_time)
+    if rental_price:
+        price_per_hour = flt(rental_price[0].price_per_hour)
+    elif room_doc.price_per_hour:
+        price_per_hour = flt(room_doc.price_per_hour)
 
-    slots = []
-    current = start_dt
-
-    existing_bookings = frappe.db.sql("""
-        SELECT name, start_time, end_time FROM `tabRoom Booking`
-        WHERE rental_room=%s AND booking_date=%s
+    # 🟥 جلب الحجوزات
+    bookings = frappe.db.sql("""
+        SELECT start_time, end_time 
+        FROM `tabRoom Booking`
+        WHERE rental_room = %s AND booking_date = %s
           AND reservation_status NOT IN ('Cancelled', 'Completed')
+        ORDER BY start_time
     """, (room_name, booking_date), as_dict=1)
 
-    while current + timedelta(minutes=period_duration) <= end_dt:
-        slot_end = current + timedelta(minutes=period_duration)
+    slots = []
 
-        is_booked = any(
-            not (slot_end.time() <= get_time(b.start_time) or current.time() >= get_time(b.end_time))
-            for b in existing_bookings
-        )
-        
-
-        is_expired = booking_date == today and slot_end <= now
-        if is_booked:
-            status = "Booked"
-        elif is_expired:
-            status = "Expired"
-        else:
-            status = "Available"
-
-        if room_price_doc and room_price_doc.price_per_hour is not None:
-            slot_price = flt(room_price_doc.price_per_hour) * flt(period_duration)
-        elif room_doc.price_per_hour:
-            slot_price = flt(room_doc.price_per_hour) * flt(period_duration)
-        else:
-            slot_price = 0.0  
-
+    # ⏱️ فترات منتهية
+    if booking_date == today and now > day_start:
+        expired_end = min(now, day_end)
+        duration = (expired_end - day_start).total_seconds() / 3600
         slots.append({
-            "start_time": current.strftime("%H:%M"),
-            "end_time": slot_end.strftime("%H:%M"),
-            "price": round(slot_price, 2),
-            "booked": is_booked,
-            "expired": is_expired,
-            "status": status
+            "start_time": day_start.strftime("%H:%M:%S"),
+            "end_time": expired_end.strftime("%H:%M:%S"),
+            "status": "Expired",
+            "booked": False,
+            "expired": True,
+            "price": round(duration * price_per_hour, 2)
+        })
+        day_start = expired_end
+
+    # ✅ متاح ومحجوز
+    current = day_start
+    for b in bookings:
+        b_start = datetime.combine(booking_date, get_time(b.start_time))
+        b_end = datetime.combine(booking_date, get_time(b.end_time))
+
+        if current < b_start:
+            duration = (b_start - current).total_seconds() / 3600
+            slots.append({
+                "start_time": current.strftime("%H:%M:%S"),
+                "end_time": b_start.strftime("%H:%M:%S"),
+                "status": "Available",
+                "booked": False,
+                "expired": False,
+                "price": round(price_per_hour, 2)
+            })
+
+        duration = (b_end - b_start).total_seconds() / 3600
+        slots.append({
+            "start_time": b_start.strftime("%H:%M:%S"),
+            "end_time": b_end.strftime("%H:%M:%S"),
+            "status": "Booked",
+            "booked": True,
+            "expired": False,
+            "price": round(price_per_hour, 2)
         })
 
-        current = slot_end
+        current = b_end
 
-    return merge_slots(slots)
+    if current < day_end:
+        duration = (day_end - current).total_seconds() / 3600
+        slots.append({
+            "start_time": current.strftime("%H:%M:%S"),
+            "end_time": day_end.strftime("%H:%M:%S"),
+            "status": "Available",
+            "booked": False,
+            "expired": False,
+            "price": round(price_per_hour, 2)
+        })
+
+    return slots
 
 
 def merge_slots(slots):
@@ -476,7 +625,7 @@ def clear_room(room, date=None):
 
     filters = {
         "rental_room": room,
-        "reservation_status": ["not in", ["Cancelled", "Completed"]],
+        "reservation_status": ["not in", ["Cancelled"]],
         "docstatus": 1
     }
 
@@ -505,3 +654,22 @@ def clear_room(room, date=None):
         'success': True,
         'message': _("Cleared {0} bookings for room {1}").format(len(bookings), room)
     }
+
+
+@frappe.whitelist()
+def update_room_colors(room_name, available_color=None, booked_color=None, expired_color=None):
+    if not room_name:
+        frappe.throw("Room name is required")
+
+    if available_color:
+        frappe.db.set_value("Rental Room", room_name, "available_color", available_color)
+
+    if booked_color:
+        frappe.db.set_value("Rental Room", room_name, "booked_color", booked_color)
+
+    if expired_color:
+        frappe.db.set_value("Rental Room", room_name, "expired_color", expired_color)
+
+    return {"status": "success"}
+
+
